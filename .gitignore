@@ -1,8 +1,8 @@
 .env
-.prettierrc
+.github/**
 .github/*
+
 yarn.lock
-package.json
 
 # Logs
 logs
