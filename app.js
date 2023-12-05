@@ -5,7 +5,7 @@ require('dotenv').config();
 
 // Routes
 const businessRouter = require('./routes/businessRouter');
-// const donationRouter = require('./routes/donationRouter');
+const donationRouter = require('./routes/donationRouter');
 // const notificationRouter = require('./routes/notificationRouter');
 // const valueRouter = require('./routes/valueRouter');
 
@@ -21,7 +21,7 @@ app.use(
 );
 
 app.use('/business', businessRouter);
-// app.use('/donation', donationRouter);
+app.use('/donation', donationRouter);
 // app.use('/notification', notificationRouter);
 // app.use('/value', valueRouter);
 
