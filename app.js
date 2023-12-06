@@ -1,6 +1,5 @@
 const express = require('express');
 const cors = require('cors');
-
 require('dotenv').config();
 
 // Routes
@@ -10,7 +9,7 @@ const businessRouter = require('./routes/businessRouter');
 // const valueRouter = require('./routes/valueRouter');
 
 const app = express();
-
+app.use(express.json());
 const PORT = process.env.PORT || 3001;
 
 app.use(
