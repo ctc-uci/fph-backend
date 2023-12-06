@@ -29,16 +29,10 @@ valueRouter.get('/:itemId', async (req, res) => {
 // CREATE a new item
 valueRouter.post('/', async (req, res) => {
   try {
-    const { itemId, itemName, quantityType, quantity, price } = req.body;
-    if (!itemId) throw new Error('Item ID is required.');
-    if (!itemName) throw new Error('Item name is required.');
-    if (!quantityType) throw new Error('Quantity type is required.');
-    if (!quantity) throw new Error('Quantity is required.');
-    if (!price) throw new Error('Price is required.');
-
+    const { itemName, quantityType, quantity, price } = req.body;
     const newItem = await db.query(
-      'INSERT INTO fair_market_value (item_id, item_name, quantity_type, quantity, price) VALUES ($(itemId), $(itemName), $(quantityType), $(quantity), $(price)) RETURNING *',
-      { itemId, itemName, quantityType, quantity, price },
+      'INSERT INTO fair_market_value (item_name, quantity_type, quantity, price) VALUES ($(itemName), $(quantityType), $(quantity), $(price)) RETURNING *',
+      { itemName, quantityType, quantity, price },
     );
     return res.status(200).send(newItem);
   } catch (err) {
