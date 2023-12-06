@@ -8,10 +8,7 @@ notificationRouter.get('/', async (req, res) => {
     const allNotifications = await db.query('SELECT * FROM notification;');
     res.status(200).send(allNotifications);
   } catch (err) {
-    res.status(500).json({
-      status: 'Failed',
-      msg: err.message,
-    });
+    res.status(500).send(err.message);
   }
 });
 
@@ -23,10 +20,7 @@ notificationRouter.get('/:id', async (req, res) => {
     });
     res.status(200).send(idNotification);
   } catch (err) {
-    res.status(500).json({
-      status: 'Failed',
-      msg: err.message,
-    });
+    res.status(500).send(err.message);
   }
 });
 
@@ -45,10 +39,7 @@ notificationRouter.post('/', async (req, res) => {
       status: 'Success',
     });
   } catch (err) {
-    res.status(500).json({
-      status: 'Failed',
-      msg: err.message,
-    });
+    res.status(500).send(err.message);
   }
 });
 
@@ -59,10 +50,11 @@ notificationRouter.put('/:id', async (req, res) => {
 
   const updateNotification = await db.query(
     `UPDATE notification SET
-      business_id = $(businessId),
-      message = $(message),
-      timestamp = $(timestamp),
-      been_dismissed = $(beenDismissed)
+      notification_id = $(id)
+      ${businessId ? `, business_id = $(businessId)` : ``}
+      ${message ? `, message = $(message)` : ``}
+      ${timestamp ? `, timestamp = $(timestamp)` : ``}
+      ${beenDismissed ? `, been_dismissed = $(beenDismissed)` : ``}
       WHERE notification_id = $(id)
       RETURNING *;`,
     {
