@@ -3,8 +3,6 @@ const { db } = require('../server/db');
 
 const notificationRouter = express.Router();
 
-module.exports = notificationRouter;
-
 notificationRouter.get('/', async (req, res) => {
   try {
     const allNotifications = await db.query('SELECT * FROM notification;');
@@ -81,3 +79,5 @@ notificationRouter.put('/:id', async (req, res) => {
     return res.status(500).send(err.message);
   }
 });
+
+module.exports = notificationRouter;
