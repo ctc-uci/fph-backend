@@ -7,7 +7,7 @@ valueRouter.get('/', async (req, res) => {
   try {
     const allValues = await db.query(`
         SELECT *
-        FROM business;
+        FROM donation_tracking;
       `);
     res.status(200).send(allValues);
   } catch (err) {
@@ -46,72 +46,49 @@ valueRouter.put('/:id', async (req, res) => {
   try {
     const { id } = req.params;
     const {
-      business_id,
-      donation_id,
-      food_bank_donation,
+      businessId,
+      foodBankDonation,
       reporter,
       email,
       date,
-      canned_dog_food_quantity,
-      dry_dog_food_quantity,
-      canned_cat_food_quantity,
-      dry_cat_food_quantity,
-      misc_items,
-      volunteer_hours,
+      cannedDogFoodQuantity,
+      dryDogFoodQuantity,
+      cannedCatFoodQuantity,
+      dryCatFoodQuantity,
+      miscItems,
+      volunteerHours,
     } = req.body;
-    if (!business_id) throw new Error('business_id is required.');
-    if (!donation_id) throw new Error('donation_id line is required.');
-    if (!food_bank_donation) throw new Error('food_bank_donation is required.');
-    if (!reporter) throw new Error('business_id is required.');
-    if (!email) throw new Error('donation_id line is required.');
-    if (!date) throw new Error('food_bank_donation is required.');
-    if (!canned_dog_food_quantity) throw new Error('canned_dog_food_quantity is required.');
-    if (!dry_dog_food_quantity) throw new Error('dry_dog_food_quantity line is required.');
-    if (!canned_cat_food_quantity) throw new Error('canned_cat_food_quanitty is required.');
-    if (!dry_cat_food_quantity) throw new Error('dry_cat_food_quantity is required.');
-    if (!misc_items) throw new Error('misc_items line is required.');
-    if (!volunteer_hours) throw new Error('volunteer_hours is required.');
 
     const updatedValue = await db.query(
       `UPDATE donation_tracking 
         SET donation_id = $(id)
-        ${business_id ? `, business_id = $(business_id) ` : ''}
-        ${donation_id ? `, donation_id = $(donation_id) ` : ''}
-        ${food_bank_donation ? `, food_bank_donation = $(food_bank_donation) ` : ''}
+        ${businessId ? `, business_id = $(businessId) ` : ''}
+        ${foodBankDonation ? `, food_bank_donation = $(foodBankDonation) ` : ''}
         ${reporter ? `, reporter = $(reporter) ` : ''}
         ${email ? `, email = $(email) ` : ''}
         ${date ? `, date = $(date) ` : ''}
-        ${
-          canned_dog_food_quantity
-            ? `, canned_dog_food_quantity = $(canned_dog_food_quantity) `
-            : ''
-        }
-        ${dry_dog_food_quantity ? `, dry_dog_food_quantity = $(dry_dog_food_quantity) ` : ''}
-        ${
-          canned_cat_food_quantity
-            ? `, canned_cat_food_quanitty = $(canned_cat_food_quanitty) `
-            : ''
-        }
-        ${dry_cat_food_quantity ? `, dry_cat_food_quantity = $(dry_cat_food_quantity) ` : ''}
-        ${misc_items ? `, misc_items = $(misc_items) ` : ''}
-        ${volunteer_hours ? `, volunteer_hours = $(volunteer_hours) ` : ''}
+        ${cannedDogFoodQuantity ? `, canned_dog_food_quantity = $(cannedDogFoodQuantity) ` : ''}
+        ${dryDogFoodQuantity ? `, dry_dog_food_quantity = $(dryDogFoodQuantity) ` : ''}
+        ${cannedCatFoodQuantity ? `, canned_cat_food_quanitty = $(cannedCatFoodQuanitty) ` : ''}
+        ${dryCatFoodQuantity ? `, dry_cat_food_quantity = $(dryCatFoodQuantity) ` : ''}
+        ${miscItems ? `, misc_items = $(miscItems) ` : ''}
+        ${volunteerHours ? `, volunteer_hours = $(volunteerHours) ` : ''}
 
         WHERE id = $(id)
         RETURNING *;`,
       {
         id,
-        business_id,
-        donation_id,
-        food_bank_donation,
+        businessId,
+        foodBankDonation,
         reporter,
         email,
         date,
-        canned_dog_food_quantity,
-        dry_dog_food_quantity,
-        canned_cat_food_quantity,
-        dry_cat_food_quantity,
-        misc_items,
-        volunteer_hours,
+        cannedDogFoodQuantity,
+        dryDogFoodQuantity,
+        cannedCatFoodQuantity,
+        dryCatFoodQuantity,
+        miscItems,
+        volunteerHours,
       },
     );
     return res.status(200).send(updatedValue);
