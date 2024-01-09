@@ -15,9 +15,12 @@ notificationRouter.get('/', async (req, res) => {
 notificationRouter.get('/:id', async (req, res) => {
   const { id } = req.params;
   try {
-    const idNotification = await db.query('SELECT * FROM notification WHERE business_id = $(id);', {
-      id,
-    });
+    const idNotification = await db.query(
+      'SELECT * FROM notification WHERE notification_id = $(id);',
+      {
+        id,
+      },
+    );
     res.status(200).send(idNotification);
   } catch (err) {
     res.status(500).send(err.message);
