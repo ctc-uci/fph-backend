@@ -3,95 +3,37 @@ const { db } = require('../server/db');
 
 const valueRouter = express.Router();
 
+// GET all items
 valueRouter.get('/', async (req, res) => {
   try {
-    const allValues = await db.query(`
-        SELECT *
-        FROM donation_tracking;
-      `);
-    res.status(200).send(allValues);
+    const allItems = await db.query(`SELECT * FROM fair_market_value;`);
+    res.status(200).send(allItems);
   } catch (err) {
     res.status(500).send(err.message);
   }
 });
 
-valueRouter.get('/:id', async (req, res) => {
+// GET all values by item id
+valueRouter.get('/:itemId', async (req, res) => {
   try {
-    const { id } = req.params;
-    const value = await db.query(
-      `
-        SELECT *
-        FROM donation_tracking
-        WHERE donation_id = $1;  
-      `,
-      [id],
+    const { itemId } = req.params;
+    const item = await db.query('SELECT * FROM fair_market_value WHERE item_id = $(itemId)', {
+      itemId,
+    });
+    res.status(200).send(item);
+  } catch (err) {
+    res.status(500).send(err.message);
+  }
+});
+
+// CREATE a new item
+valueRouter.post('/', async (req, res) => {
+  try {
+    const { itemName, quantityType, quantity, price } = req.body;
+    const newItem = await db.query(
+      'INSERT INTO fair_market_value (item_name, quantity_type, quantity, price) VALUES ($(itemName), $(quantityType), $(quantity), $(price)) RETURNING *',
+      { itemName, quantityType, quantity, price },
     );
-    res.status(200).send(value);
-  } catch (err) {
-    res.status(500).send(err.message);
-  }
-});
-
-valueRouter.delete('/:id', async (req, res) => {
-  try {
-    const { id } = req.params;
-    await db.query('DELETE from donation_tracking WHERE donation_id = $1;', [id]);
-    res.status(200).send('Deleted donation');
-  } catch (err) {
-    res.status(500).send(err.message);
-  }
-});
-
-valueRouter.put('/:id', async (req, res) => {
-  try {
-    const { id } = req.params;
-    const {
-      businessId,
-      foodBankDonation,
-      reporter,
-      email,
-      date,
-      cannedDogFoodQuantity,
-      dryDogFoodQuantity,
-      cannedCatFoodQuantity,
-      dryCatFoodQuantity,
-      miscItems,
-      volunteerHours,
-    } = req.body;
-
-    const updatedValue = await db.query(
-      `UPDATE donation_tracking 
-        SET donation_id = $(id)
-        ${businessId ? `, business_id = $(businessId) ` : ''}
-        ${foodBankDonation ? `, food_bank_donation = $(foodBankDonation) ` : ''}
-        ${reporter ? `, reporter = $(reporter) ` : ''}
-        ${email ? `, email = $(email) ` : ''}
-        ${date ? `, date = $(date) ` : ''}
-        ${cannedDogFoodQuantity ? `, canned_dog_food_quantity = $(cannedDogFoodQuantity) ` : ''}
-        ${dryDogFoodQuantity ? `, dry_dog_food_quantity = $(dryDogFoodQuantity) ` : ''}
-        ${cannedCatFoodQuantity ? `, canned_cat_food_quanitty = $(cannedCatFoodQuanitty) ` : ''}
-        ${dryCatFoodQuantity ? `, dry_cat_food_quantity = $(dryCatFoodQuantity) ` : ''}
-        ${miscItems ? `, misc_items = $(miscItems) ` : ''}
-        ${volunteerHours ? `, volunteer_hours = $(volunteerHours) ` : ''}
-
-        WHERE id = $(id)
-        RETURNING *;`,
-      {
-        id,
-        businessId,
-        foodBankDonation,
-        reporter,
-        email,
-        date,
-        cannedDogFoodQuantity,
-        dryDogFoodQuantity,
-        cannedCatFoodQuantity,
-        dryCatFoodQuantity,
-        miscItems,
-        volunteerHours,
-      },
-    );
-    return res.status(200).send(updatedValue);
   } catch (err) {
     return res.status(500).send(err.message);
   }
