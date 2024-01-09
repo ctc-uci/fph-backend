@@ -34,7 +34,6 @@ valueRouter.post('/', async (req, res) => {
       'INSERT INTO fair_market_value (item_name, quantity_type, quantity, price) VALUES ($(itemName), $(quantityType), $(quantity), $(price)) RETURNING *',
       { itemName, quantityType, quantity, price },
     );
-    return res.status(200).send(newItem);
   } catch (err) {
     return res.status(500).send(err.message);
   }
