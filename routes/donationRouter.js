@@ -30,6 +30,44 @@ donationRouter.get('/:donationId', async (req, res) => {
   }
 });
 
+donationRouter.get('/business/:businessId', async (req, res) => {
+  try {
+    const { businessId } = req.params;
+    const donation = await db.query(
+      'SELECT * FROM donation_tracking WHERE business_id = $(businessId)',
+      {
+        businessId,
+      },
+    );
+    res.status(200).send(donation);
+  } catch (err) {
+    res.status(500).send(err.message);
+  }
+});
+
+donationRouter.get('/business/totals/:businessId', async (req, res) => {
+  try {
+    const { businessId } = req.params;
+    const donation = await db.query(
+      `
+      SELECT
+      CAST(SUM (d.canned_dog_food_quantity) AS int) canned_dog_food_quantity,
+      CAST(SUM (d.dry_dog_food_quantity) AS int) dry_dog_food_quantity,
+      CAST(SUM (d.canned_cat_food_quantity) AS int) canned_cat_food_quantity,
+      CAST(SUM (d.dry_cat_food_quantity) AS int) dry_cat_food_quantity
+      FROM donation_tracking d
+      WHERE business_id = $(businessId);
+      `,
+      {
+        businessId,
+      },
+    );
+    res.status(200).send(donation);
+  } catch (err) {
+    res.status(500).send(err.message);
+  }
+});
+
 // POST a new donation
 donationRouter.post('/', async (req, res) => {
   try {
@@ -103,7 +141,7 @@ donationRouter.put('/:id', async (req, res) => {
     } = req.body;
 
     const updatedValue = await db.query(
-      `UPDATE donation_tracking 
+      `UPDATE donation_tracking
         SET donation_id = $(id)
         ${businessId ? `, business_id = $(businessId) ` : ''}
         ${foodBankDonation ? `, food_bank_donation = $(foodBankDonation) ` : ''}
