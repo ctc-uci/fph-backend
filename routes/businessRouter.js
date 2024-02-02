@@ -191,12 +191,13 @@ businessRouter.put('/:id', async (req, res) => {
       }
     }
     query += updateFields.join(', ');
-    query += ` WHERE id = ${id}`;
+    query += `WHERE id = ${id}`;
 
     await db.query(query);
 
     res.status(200).send('Update successful');
   } catch (err) {
+    console.log(err);
     res.status(500).send(err.message);
   }
 });
