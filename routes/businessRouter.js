@@ -41,12 +41,6 @@ businessRouter.get('/:id', async (req, res) => {
 businessRouter.get('/filter/:column/:sortType', async (req, res) => {
   try {
     const { column, sortType } = req.params;
-    // const business = await db.query(
-    //   `
-    //   SELECT id, $(test) FROM business
-    //  `,
-    //   { test },
-    // );
     const business = await db.query(
       `
       SELECT * FROM business
