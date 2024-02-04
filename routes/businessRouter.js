@@ -38,15 +38,20 @@ businessRouter.get('/:id', async (req, res) => {
 });
 
 // GET business with order by specified
-businessRouter.get('/filter/:if', async (req, res) => {
+businessRouter.get('/filter/:column/:sortType', async (req, res) => {
   try {
-    const { id } = req.params;
+    const { column, sortType } = req.params;
+    // const business = await db.query(
+    //   `
+    //   SELECT id, $(test) FROM business
+    //  `,
+    //   { test },
+    // );
     const business = await db.query(
       `
-      SELECT ${id}
-      FROM business
+      SELECT * FROM business
+      ORDER BY ${column} ${sortType}
      `,
-      { id },
     );
     res.status(200).send(business);
   } catch (err) {
