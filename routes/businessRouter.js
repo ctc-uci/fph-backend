@@ -19,6 +19,18 @@ businessRouter.get('/', async (req, res) => {
   }
 });
 
+businessRouter.get('/totalSites', async (req, res) => {
+  try {
+    const totalSites = await db.query(`
+      SELECT COUNT(*)
+      FROM business;
+    `);
+    res.status(200).send(totalSites);
+  } catch (err) {
+    res.status(500).send(err.message);
+  }
+});
+
 // GET business with matching ID
 businessRouter.get('/:id', async (req, res) => {
   try {
@@ -30,6 +42,24 @@ businessRouter.get('/:id', async (req, res) => {
       WHERE id = $1;
     `,
       [id],
+    );
+    res.status(200).send(business);
+  } catch (err) {
+    res.status(500).send(err.message);
+  }
+});
+
+// GET businesses in paginated form (sets of 10)
+businessRouter.get('/paginated/:pageNumber', async (req, res) => {
+  try {
+    const { totalSites, pageNumber } = req.params;
+    const pageOffset = pageNumber * 10;
+    const pageLimit = ((totalSites - pageOffset) % 10) + 1;
+    const business = await db.query(
+      `
+      SELECT * FROM business
+      LIMIT ${pageLimit} OFFSET ${pageOffset}
+      `,
     );
     res.status(200).send(business);
   } catch (err) {
