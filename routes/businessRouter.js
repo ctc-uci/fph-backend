@@ -37,6 +37,22 @@ businessRouter.get('/:id', async (req, res) => {
   }
 });
 
+// GET business with order by specified
+businessRouter.get('/order/:column/:sortType', async (req, res) => {
+  try {
+    const { column, sortType } = req.params;
+    const business = await db.query(
+      `
+      SELECT * FROM business
+      ORDER BY ${column} ${sortType}
+     `,
+    );
+    res.status(200).send(business);
+  } catch (err) {
+    res.status(500).send(err.message);
+  }
+});
+
 //  POST add a new business
 businessRouter.post('/', async (req, res) => {
   try {
