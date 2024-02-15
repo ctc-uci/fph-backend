@@ -68,6 +68,69 @@ donationRouter.get('/business/totals/:businessId', async (req, res) => {
   }
 });
 
+// Route for filtering donations made in the last month
+donationRouter.get('/filter/month', async (req, res) => {
+  try {
+    const filterDonationSites = await db.query(
+      `
+      SELECT * FROM donation_tracking
+      WHERE date > current_date - interval '1 month'
+      `,
+    );
+    res.status(200).send(filterDonationSites);
+  } catch (error) {
+    console.error(error);
+    res.status(500).send({ message: 'Internal Server Error' });
+  }
+});
+
+// Route for filtering donations made in the last quarter
+donationRouter.get('/filter/quarter', async (req, res) => {
+  try {
+    const filterDonationSites = await db.query(
+      `
+      SELECT * FROM donation_tracking
+      WHERE date > current_date - interval '3 months'
+      `,
+    );
+    res.status(200).send(filterDonationSites);
+  } catch (error) {
+    console.error(error);
+    res.status(500).send({ message: 'Internal Server Error' });
+  }
+});
+
+// Route for filtering donations made in the last year
+donationRouter.get('/filter/year', async (req, res) => {
+  try {
+    const filterDonationSites = await db.query(
+      `
+      SELECT * FROM donation_tracking
+      WHERE date > current_date - interval '1 year'
+      `,
+    );
+    res.status(200).send(filterDonationSites);
+  } catch (error) {
+    console.error(error);
+    res.status(500).send({ message: 'Internal Server Error' });
+  }
+});
+
+// Route for getting all donation records without date filtering
+donationRouter.get('/filter/all', async (req, res) => {
+  try {
+    const filterDonationSites = await db.query(
+      `
+      SELECT * FROM donation_tracking
+      `,
+    );
+    res.status(200).send(filterDonationSites);
+  } catch (error) {
+    console.error(error);
+    res.status(500).send({ message: 'Internal Server Error' });
+  }
+});
+
 // POST a new donation
 donationRouter.post('/', async (req, res) => {
   try {
