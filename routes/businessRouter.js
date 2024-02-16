@@ -9,21 +9,33 @@ const businessRouter = express.Router();
 // GET all businesses
 businessRouter.get('/', async (req, res) => {
   try {
-    const allBusinesses = await db.query(`
+    const { businessLimit, pageNum, tab } = req.query;
+    const tabsWhereClause = tab ? `WHERE status='${tab}'` : '';
+
+    const allBusinesses = await db.query(
+      `
       SELECT *
-      FROM business;
-    `);
+      FROM business
+      ${tabsWhereClause}
+      ${businessLimit ? ` LIMIT ${businessLimit}` : ''}
+      ${pageNum ? ` OFFSET ${(pageNum - 1) * businessLimit}` : ''};`,
+      { businessLimit, pageNum },
+    );
     res.status(200).send(allBusinesses);
   } catch (err) {
     res.status(500).send(err.message);
   }
 });
 
-businessRouter.get('/totalSites', async (req, res) => {
+businessRouter.get('/totalBusinesses', async (req, res) => {
   try {
+    const { tab } = req.query;
+    const tabsWhereClause = tab ? `WHERE status='${tab}'` : '';
+
     const totalSites = await db.query(`
       SELECT COUNT(*)
-      FROM business;
+      FROM business
+      ${tabsWhereClause}
     `);
     res.status(200).send(totalSites);
   } catch (err) {
@@ -42,24 +54,6 @@ businessRouter.get('/:id', async (req, res) => {
       WHERE id = $1;
     `,
       [id],
-    );
-    res.status(200).send(business);
-  } catch (err) {
-    res.status(500).send(err.message);
-  }
-});
-
-// GET businesses in paginated form (sets of 10)
-businessRouter.get('/paginated/:pageNumber', async (req, res) => {
-  try {
-    const { totalSites, pageNumber } = req.params;
-    const pageOffset = pageNumber * 10;
-    const pageLimit = ((totalSites - pageOffset) % 10) + 1;
-    const business = await db.query(
-      `
-      SELECT * FROM business
-      LIMIT ${pageLimit} OFFSET ${pageOffset}
-      `,
     );
     res.status(200).send(business);
   } catch (err) {
