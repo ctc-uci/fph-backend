@@ -69,11 +69,11 @@ donationRouter.get('/business/totals/:businessId', async (req, res) => {
 });
 
 // Route for filtering donations made in the last month
-donationRouter.get('/filter/:filter', async (req, res) => {
-  let filterQuery = 'SELECT * FROM donation_tracking WHERE date > current_date - interval ';
-  let filterDonationSites = '';
 
+donationRouter.get('/filter/:filter', async (req, res) => {
   try {
+    let filterQuery = 'SELECT * FROM donation_tracking WHERE date > current_date - interval ';
+    let filterDonationSites = '';
     const { filter } = req.params;
     if (filter !== 'all') {
       if (filter === 'month') {
@@ -84,7 +84,6 @@ donationRouter.get('/filter/:filter', async (req, res) => {
         filterQuery += "'1 year'";
       }
       filterDonationSites = await db.query(filterQuery);
-      res.status(200).send(filterDonationSites);
     } else {
       filterQuery = 'SELECT * FROM donation_tracking';
       filterDonationSites = await db.query(filterQuery);
@@ -114,9 +113,13 @@ donationRouter.post('/', async (req, res) => {
     } = req.body;
 
     if (!business_id) throw new Error('Business ID is required.');
+
     if (!food_bank_donation) throw new Error('Food bank donation is required.');
+
     if (!reporter) throw new Error('Reporter is required.');
+
     if (!email) throw new Error('Email is required.');
+
     if (!date) throw new Error('Date is required.');
 
     const newFacility = await db.query(
@@ -167,7 +170,6 @@ donationRouter.put('/:id', async (req, res) => {
       miscItems,
       volunteerHours,
     } = req.body;
-
     const updatedValue = await db.query(
       `UPDATE donation_tracking
         SET donation_id = $(id)
@@ -204,5 +206,4 @@ donationRouter.put('/:id', async (req, res) => {
     return res.status(500).send(err.message);
   }
 });
-
 module.exports = donationRouter;
