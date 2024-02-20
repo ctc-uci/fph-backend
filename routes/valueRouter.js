@@ -29,13 +29,30 @@ valueRouter.get('/:itemId', async (req, res) => {
 // CREATE a new item
 valueRouter.post('/', async (req, res) => {
   try {
-    const { itemName, quantityType, quantity, price } = req.body;
-    const newItem = await db.query(
-      'INSERT INTO fair_market_value (item_name, quantity_type, quantity, price) VALUES ($(itemName), $(quantityType), $(quantity), $(price)) RETURNING *',
-      { itemName, quantityType, quantity, price },
+    const { item_name: itemName, quantity_type: quantityType, price, category } = req.body;
+    await db.query(
+      'INSERT INTO fair_market_value (item_name, quantity_type, price, category) VALUES ($(itemName), $(quantityType), $(price), $(category)) RETURNING *',
+      { itemName, quantityType, price, category },
     );
   } catch (err) {
-    return res.status(500).send(err.message);
+    res.status(500).send(err.message);
+  }
+});
+
+// GET values by category
+valueRouter.get('/filter/:category', async (req, res) => {
+  try {
+    const { category } = req.params;
+    let query = 'SELECT * FROM fair_market_value';
+    if (category && category !== 'all') {
+      query += ' WHERE category = $(category)';
+    }
+    const items = await db.query(query, {
+      category,
+    });
+    res.status(200).send(items);
+  } catch (err) {
+    res.status(500).send(err.message);
   }
 });
 
