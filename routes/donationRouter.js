@@ -71,10 +71,16 @@ donationRouter.get('/business/totals/:businessId', async (req, res) => {
 // Route for filtering donations made in the last month
 
 donationRouter.get('/filter/:filter', async (req, res) => {
+  const siteResultLimit = 10; // how many results we want to show
   try {
-    let filterQuery = 'SELECT * FROM donation_tracking WHERE date > current_date - interval ';
+    let filterQuery = 'WHERE date > current_date - interval ';
     let filterDonationSites = '';
+
     const { filter } = req.params;
+    const { pageNum, tab } = req.query;
+
+    const tabsWhereClause = tab ? `status='${tab}'` : '';
+
     if (filter !== 'all') {
       if (filter === 'month') {
         filterQuery += "'1 month'";
@@ -83,14 +89,38 @@ donationRouter.get('/filter/:filter', async (req, res) => {
       } else {
         filterQuery += "'1 year'";
       }
-      filterDonationSites = await db.query(filterQuery);
+      filterDonationSites = await db.query(
+        `
+          SELECT * FROM donation_tracking
+          ${filterQuery}
+          AND ${tabsWhereClause}
+          LIMIT ${siteResultLimit}
+          ${pageNum ? `OFFSET ${(pageNum - 1) * siteResultLimit}` : ''}
+        `, // Ensured that there's a line break after the opening template literal and before the closing template literal, as well as before the closing parenthesis of db.query call.
+        { siteResultLimit, pageNum },
+      );
+      res.status(200).send(filterDonationSites);
     } else {
-      filterQuery = 'SELECT * FROM donation_tracking';
-      filterDonationSites = await db.query(filterQuery);
+      filterDonationSites = await db.query(
+        `
+          SELECT * FROM donation_tracking
+          ${filterQuery}
+          AND ${tabsWhereClause}
+          LIMIT ${siteResultLimit}
+          ${pageNum ? `OFFSET ${(pageNum - 1) * siteResultLimit}` : ''}
+        `, // Ensured that there's a line break after the opening template literal and before the closing template literal, as well as before the closing parenthesis of db.query call.
+        { siteResultLimit, pageNum },
+      );
     }
     res.status(200).send(filterDonationSites);
   } catch (error) {
     console.error(error);
+    console.log(`
+    SELECT * FROM donation_tracking
+    ${filterQuery}
+    AND ${tabsWhereClause}
+    LIMIT ${siteResultLimit}
+    ${pageNum ? `OFFSET ${(pageNum - 1) * siteResultLimit}` : ''})`)
     res.status(500).send(error.message);
   }
 });
