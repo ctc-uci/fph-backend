@@ -90,37 +90,23 @@ donationRouter.get('/filter/:filter', async (req, res) => {
         filterQuery += "'1 year'";
       }
       filterDonationSites = await db.query(
-        `
-          SELECT * FROM donation_tracking
-          ${filterQuery}
-          AND ${tabsWhereClause}
-          LIMIT ${siteResultLimit}
-          ${pageNum ? `OFFSET ${(pageNum - 1) * siteResultLimit}` : ''}
-        `, // Ensured that there's a line break after the opening template literal and before the closing template literal, as well as before the closing parenthesis of db.query call.
+        `SELECT * FROM donation_tracking ${filterQuery} ${
+          tabsWhereClause !== '' ? `${tabsWhereClause} AND` : ''
+        } LIMIT ${siteResultLimit} ${pageNum ? `OFFSET ${(pageNum - 1) * siteResultLimit}` : ''}`,
         { siteResultLimit, pageNum },
       );
       res.status(200).send(filterDonationSites);
     } else {
       filterDonationSites = await db.query(
-        `
-          SELECT * FROM donation_tracking
-          ${filterQuery}
-          AND ${tabsWhereClause}
-          LIMIT ${siteResultLimit}
-          ${pageNum ? `OFFSET ${(pageNum - 1) * siteResultLimit}` : ''}
-        `, // Ensured that there's a line break after the opening template literal and before the closing template literal, as well as before the closing parenthesis of db.query call.
+        `SELECT * FROM donation_tracking LIMIT ${siteResultLimit} ${
+          pageNum ? `OFFSET ${(pageNum - 1) * siteResultLimit}` : ''
+        }`,
         { siteResultLimit, pageNum },
       );
+      res.status(200).send(filterDonationSites);
     }
-    res.status(200).send(filterDonationSites);
   } catch (error) {
     console.error(error);
-    console.log(`
-    SELECT * FROM donation_tracking
-    ${filterQuery}
-    AND ${tabsWhereClause}
-    LIMIT ${siteResultLimit}
-    ${pageNum ? `OFFSET ${(pageNum - 1) * siteResultLimit}` : ''})`)
     res.status(500).send(error.message);
   }
 });
