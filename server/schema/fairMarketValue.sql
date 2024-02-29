@@ -8,7 +8,7 @@ CREATE TABLE IF NOT EXISTS public.notification
     "timestamp" date NOT NULL,
     been_dismissed boolean NOT NULL,
     CONSTRAINT notification_pkey PRIMARY KEY (notification_id),
-    CONSTRAINT bussines_id FOREIGN KEY (business_id)
+    CONSTRAINT business_id FOREIGN KEY (business_id)
         REFERENCES public.business (id) MATCH SIMPLE
         ON UPDATE NO ACTION
         ON DELETE NO ACTION
