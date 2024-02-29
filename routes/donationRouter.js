@@ -7,8 +7,65 @@ const donationRouter = express.Router();
 // GET all donations
 donationRouter.get('/', async (req, res) => {
   try {
-    const donation = await db.query('SELECT * FROM donation_tracking');
+    const { donationsLimit, pageNum } = req.query;
+    const donation = await db.query(
+      `
+      SELECT *
+      FROM donation_tracking
+      ${donationsLimit ? ` LIMIT ${donationsLimit}` : ''}
+      ${pageNum ? ` OFFSET ${(pageNum - 1) * donationsLimit}` : ''};`,
+      { donationsLimit, pageNum },
+    );
     res.status(200).send(donation);
+  } catch (err) {
+    res.status(500).send(err.message);
+  }
+});
+
+// GET donation where it equals a specific tab
+donationRouter.get('/totalDonations', async (req, res) => {
+  try {
+    const totalSites = await db.query(`
+      SELECT COUNT(*)
+      FROM donation_tracking
+    `);
+    res.status(200).send(totalSites);
+  } catch (err) {
+    res.status(500).send(err.message);
+  }
+});
+
+// GET the amount of donations that fit similar to that of the stringToSearch
+donationRouter.get('/totalDonations/:stringToSearch', async (req, res) => {
+  try {
+    const { stringToSearch } = req.params;
+    const totalSites = await db.query(`
+      SELECT COUNT(*)
+      FROM donation_tracking
+      WHERE reporter LIKE '%${stringToSearch}%'
+      OR food_bank_donation LIKE '%${stringToSearch}%'
+    `);
+    res.status(200).send(totalSites);
+  } catch (err) {
+    res.status(500).send(err.message);
+  }
+});
+
+// GET donations that fit the string to search
+donationRouter.get('/search/:stringToSearch', async (req, res) => {
+  try {
+    const { stringToSearch } = req.params;
+    const { donationsLimit, pageNum } = req.query;
+    const stringMatch = await db.query(
+      `
+      SELECT *
+      FROM donation_tracking
+      WHERE reporter LIKE '%${stringToSearch}%'
+        OR food_bank_donation LIKE '%${stringToSearch}%'
+      ${donationsLimit ? ` LIMIT ${donationsLimit}` : ''}
+      ${pageNum ? ` OFFSET ${(pageNum - 1) * donationsLimit}` : ''};`,
+    );
+    res.status(200).send(stringMatch);
   } catch (err) {
     res.status(500).send(err.message);
   }
