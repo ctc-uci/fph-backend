@@ -7,7 +7,16 @@ const donationRouter = express.Router();
 // GET all donations
 donationRouter.get('/', async (req, res) => {
   try {
-    const donation = await db.query('SELECT * FROM donation_tracking');
+    const { itemsLimit, pageNum } = req.query;
+
+    const donation = await db.query(
+      `
+      SELECT *
+      FROM donation_tracking
+      ${itemsLimit ? `LIMIT ${itemsLimit}` : ''}
+      ${pageNum ? `OFFSET ${(pageNum - 1) * itemsLimit}` : ''};`,
+      { itemsLimit, pageNum },
+    );
     res.status(200).send(donation);
   } catch (err) {
     res.status(500).send(err.message);
