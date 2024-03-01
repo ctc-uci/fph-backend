@@ -23,6 +23,18 @@ donationRouter.get('/', async (req, res) => {
   }
 });
 
+donationRouter.get('/totalDonations', async (req, res) => {
+  try {
+    const totalSites = await db.query(`
+      SELECT COUNT(*)
+      FROM donation_tracking
+    `);
+    res.status(200).send(totalSites);
+  } catch (err) {
+    res.status(500).send(err.message);
+  }
+});
+
 // GET donation by id
 donationRouter.get('/:donationId', async (req, res) => {
   try {

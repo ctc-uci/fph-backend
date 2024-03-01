@@ -1,3 +1,5 @@
+
+
 DROP TABLE IF EXISTS public.business;
 
 CREATE TABLE IF NOT EXISTS public.business
