@@ -237,7 +237,6 @@ businessRouter.put('/:id', async (req, res) => {
 
     res.status(200).send('Update successful');
   } catch (err) {
-    console.log(err);
     res.status(500).send(err.message);
   }
 });
