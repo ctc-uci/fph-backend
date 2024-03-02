@@ -68,48 +68,52 @@ donationRouter.get('/business/totals/:businessId', async (req, res) => {
   }
 });
 
+// Generates the WHERE clause for the filter and search for totalDonations and filteredDonations routes
+const generateWhereClause = (filter, search) => {
+  const columns = [
+    'business_id',
+    'donation_id',
+    'food_bank_donation',
+    'reporter',
+    'email',
+    'date',
+    'canned_dog_food_quantity',
+    'dry_dog_food_quantity',
+    'canned_cat_food_quantity',
+    'dry_cat_food_quantity',
+    'misc_items',
+    'volunteer_hours',
+  ];
+  let filterQuery = '';
+  if (filter !== 'all') {
+    if (filter === 'month') {
+      filterQuery = "'1 month'";
+    } else if (filter === 'quarter') {
+      filterQuery = "'3 months'";
+    } else {
+      filterQuery = "'1 year'";
+    }
+  }
+  const tabsWhereClause = filterQuery ? `WHERE date > current_date - interval ${filterQuery}` : '';
+  let searchWhereClause = '';
+  if (search.length > 0) {
+    searchWhereClause = `${tabsWhereClause ? ` AND ` : ` WHERE `}`;
+    searchWhereClause += columns
+      .map((column) => {
+        return `CAST(${column} AS TEXT) ILIKE '%' || $(search) || '%'`;
+      })
+      .join(' OR ');
+  }
+  return { tabsWhereClause, searchWhereClause };
+};
+
 // Route for getting total number of donations by filter
 donationRouter.get('/totalDonations/:filter', async (req, res) => {
   try {
     const { filter } = req.params;
     const { searchTerm } = req.query;
     const search = searchTerm.split('+').join(' ');
-    const columns = [
-      'business_id',
-      'donation_id',
-      'food_bank_donation',
-      'reporter',
-      'email',
-      'date',
-      'canned_dog_food_quantity',
-      'dry_dog_food_quantity',
-      'canned_cat_food_quantity',
-      'dry_cat_food_quantity',
-      'misc_items',
-      'volunteer_hours',
-    ];
-    let filterQuery = '';
-    if (filter !== 'all') {
-      if (filter === 'month') {
-        filterQuery = "'1 month'";
-      } else if (filter === 'quarter') {
-        filterQuery = "'3 months'";
-      } else {
-        filterQuery = "'1 year'";
-      }
-    }
-    const tabsWhereClause = filterQuery
-      ? `WHERE date > current_date - interval ${filterQuery}`
-      : '';
-    let searchWhereClause = '';
-    if (search.length > 0) {
-      searchWhereClause = `${tabsWhereClause ? ` AND ` : ` WHERE `}`;
-      searchWhereClause += columns
-        .map((column) => {
-          return `CAST(${column} AS TEXT) ILIKE '%' || $(search) || '%'`;
-        })
-        .join(' OR ');
-    }
+    const { tabsWhereClause, searchWhereClause } = generateWhereClause(filter, search);
     const numDonations = await db.query(
       `
       SELECT COUNT(*)
@@ -130,49 +134,11 @@ donationRouter.get('/filter/:filter', async (req, res) => {
   const siteResultLimit = 10; // how many results we want to show
   try {
     let filterDonationSites = '';
-
     const { filter } = req.params;
     const { pageNum, searchTerm } = req.query;
     const search = searchTerm ? searchTerm.split('+').join(' ') : '';
     const page = pageNum || 1;
-    const columns = [
-      'business_id',
-      'donation_id',
-      'food_bank_donation',
-      'reporter',
-      'email',
-      'date',
-      'canned_dog_food_quantity',
-      'dry_dog_food_quantity',
-      'canned_cat_food_quantity',
-      'dry_cat_food_quantity',
-      'misc_items',
-      'volunteer_hours',
-    ];
-    let filterQuery = '';
-    if (filter !== 'all') {
-      if (filter === 'month') {
-        filterQuery = "'1 month'";
-      } else if (filter === 'quarter') {
-        filterQuery = "'3 months'";
-      } else {
-        filterQuery = "'1 year'";
-      }
-    }
-    const tabsWhereClause = filterQuery
-      ? `WHERE (date > current_date - interval ${filterQuery})`
-      : '';
-    let searchWhereClause = '';
-    if (search.length > 0) {
-      searchWhereClause = `${tabsWhereClause ? ` AND (` : ` WHERE `}`;
-      searchWhereClause += columns
-        .map((column) => {
-          return `CAST(${column} AS TEXT) ILIKE '%' || $(search) || '%'`;
-        })
-        .join(' OR ');
-      searchWhereClause += ')';
-    }
-
+    const { tabsWhereClause, searchWhereClause } = generateWhereClause(filter, search);
     filterDonationSites = await db.query(
       `SELECT * FROM donation_tracking
       ${tabsWhereClause}
