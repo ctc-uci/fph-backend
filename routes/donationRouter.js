@@ -68,30 +68,89 @@ donationRouter.get('/business/totals/:businessId', async (req, res) => {
   }
 });
 
-// Route for filtering donations made in the last month
+// Generates the WHERE clause for the filter and search for totalDonations and filteredDonations routes
+const generateWhereClause = (filter, search) => {
+  const columns = [
+    'business_id',
+    'donation_id',
+    'food_bank_donation',
+    'reporter',
+    'email',
+    'date',
+    'canned_dog_food_quantity',
+    'dry_dog_food_quantity',
+    'canned_cat_food_quantity',
+    'dry_cat_food_quantity',
+    'misc_items',
+    'volunteer_hours',
+  ];
+  let filterQuery = '';
+  if (filter !== 'all') {
+    if (filter === 'month') {
+      filterQuery = "'1 month'";
+    } else if (filter === 'quarter') {
+      filterQuery = "'3 months'";
+    } else {
+      filterQuery = "'1 year'";
+    }
+  }
+  const tabsWhereClause = filterQuery ? `WHERE date > current_date - interval ${filterQuery}` : '';
+  let searchWhereClause = '';
+  if (search.length > 0) {
+    searchWhereClause = `${tabsWhereClause ? ` AND ` : ` WHERE `}`;
+    searchWhereClause += columns
+      .map((column) => {
+        return `CAST(${column} AS TEXT) ILIKE '%' || $(search) || '%'`;
+      })
+      .join(' OR ');
+  }
+  return { tabsWhereClause, searchWhereClause };
+};
 
-donationRouter.get('/filter/:filter', async (req, res) => {
+// Route for getting total number of donations by filter
+donationRouter.get('/totalDonations/:filter', async (req, res) => {
   try {
-    let filterQuery = 'SELECT * FROM donation_tracking WHERE date > current_date - interval ';
+    const { filter } = req.params;
+    const { searchTerm } = req.query;
+    const search = searchTerm.split('+').join(' ');
+    const { tabsWhereClause, searchWhereClause } = generateWhereClause(filter, search);
+    const numDonations = await db.query(
+      `
+      SELECT COUNT(*)
+      from donation_tracking
+      ${tabsWhereClause}
+      ${searchWhereClause};
+    `,
+      { search },
+    );
+    res.status(200).send(numDonations);
+  } catch (error) {
+    res.status(500).send(error.message);
+  }
+});
+
+// Route for filtering donations made in the specified time frame and paginated
+donationRouter.get('/filter/:filter', async (req, res) => {
+  const siteResultLimit = 10; // how many results we want to show
+  try {
     let filterDonationSites = '';
     const { filter } = req.params;
-    if (filter !== 'all') {
-      if (filter === 'month') {
-        filterQuery += "'1 month'";
-      } else if (filter === 'quarter') {
-        filterQuery += "'3 months'";
-      } else {
-        filterQuery += "'1 year'";
-      }
-      filterDonationSites = await db.query(filterQuery);
-    } else {
-      filterQuery = 'SELECT * FROM donation_tracking';
-      filterDonationSites = await db.query(filterQuery);
-    }
+    const { pageNum, searchTerm } = req.query;
+    const search = searchTerm ? searchTerm.split('+').join(' ') : '';
+    const page = pageNum || 1;
+    const { tabsWhereClause, searchWhereClause } = generateWhereClause(filter, search);
+    filterDonationSites = await db.query(
+      `SELECT * FROM donation_tracking
+      ${tabsWhereClause}
+      ${searchWhereClause}
+       ORDER BY date DESC
+       LIMIT ${siteResultLimit} OFFSET ${(page - 1) * siteResultLimit}
+       ;`,
+      { siteResultLimit, pageNum, search },
+    );
     res.status(200).send(filterDonationSites);
   } catch (error) {
-    console.error(error);
-    res.status(500).send(error.message);
+    res.status(500).send(error);
   }
 });
 
