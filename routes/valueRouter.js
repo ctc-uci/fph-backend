@@ -3,21 +3,11 @@ const { db } = require('../server/db');
 
 const valueRouter = express.Router();
 
-// GET all items
+// GET all items without filtering
 valueRouter.get('/', async (req, res) => {
   try {
-    const { itemsLimit, pageNum } = req.query;
-
-    const allItems = await db.query(
-      `
-      SELECT *
-      FROM fair_market_value
-      ORDER BY item_id
-      ${itemsLimit ? ` LIMIT ${itemsLimit}` : ''}
-      ${pageNum ? ` OFFSET ${(pageNum - 1) * itemsLimit}` : ''};`,
-      { itemsLimit, pageNum },
-    );
-    res.status(200).send(allItems);
+    const items = await db.query(`SELECT * FROM fair_market_value;`);
+    res.status(200).send(items);
   } catch (err) {
     res.status(500).send(err.message);
   }
@@ -25,11 +15,38 @@ valueRouter.get('/', async (req, res) => {
 
 valueRouter.get('/totalValues', async (req, res) => {
   try {
+    const { category } = req.query;
+    const categoryWhereClause =
+      category && category !== 'all' ? `WHERE category='${category}'` : '';
+
     const totalSites = await db.query(`
       SELECT COUNT(*)
       FROM fair_market_value
+      ${categoryWhereClause}
     `);
     res.status(200).send(totalSites);
+  } catch (err) {
+    res.status(500).send(err.message);
+  }
+});
+
+// GET all items WITH PAGINATION
+valueRouter.get('/paginate', async (req, res) => {
+  try {
+    const { itemsLimit, pageNum, category } = req.query;
+    const categoryWhereClause =
+      category && category !== 'all' ? `WHERE category='${category}'` : '';
+    const allItems = await db.query(
+      `
+      SELECT *
+      FROM fair_market_value
+      ${categoryWhereClause}
+      ORDER BY item_id
+      ${itemsLimit ? ` LIMIT ${itemsLimit}` : ''}
+      ${pageNum ? ` OFFSET ${(pageNum - 1) * itemsLimit}` : ''};`,
+      { itemsLimit, pageNum },
+    );
+    res.status(200).send(allItems);
   } catch (err) {
     res.status(500).send(err.message);
   }
@@ -52,10 +69,11 @@ valueRouter.get('/:itemId', async (req, res) => {
 valueRouter.post('/', async (req, res) => {
   try {
     const { itemName, quantityType, price, category } = req.body;
-    await db.query(
+    const item = await db.query(
       'INSERT INTO fair_market_value (item_name, quantity_type, price, category) VALUES ($(itemName), $(quantityType), $(price), $(category)) RETURNING *',
       { itemName, quantityType, price, category },
     );
+    res.status(200).send(item);
   } catch (err) {
     res.status(500).send(err.message);
   }
@@ -63,35 +81,31 @@ valueRouter.post('/', async (req, res) => {
 
 // edit item
 valueRouter.put('/:id', async (req, res) => {
-  try {
-    const { id } = req.params;
-    const { itemName, quantityType, price, category } = req.body;
+  const { id } = req.params;
 
-    await db.query(
-      `UPDATE fair_market_value
-      SET item_name = $(itemName), quantity_type = $(quantityType), price = $(price), category = $(category)
-      WHERE item_id = $(id) RETURNING *`,
-      { id, itemName, quantityType, price, category },
-    );
-  } catch (err) {
-    res.status(500).send(err.message);
-  }
-});
+  const { itemName, quantityType, price, category } = req.body;
 
-// GET values by category
-valueRouter.get('/filter/:category', async (req, res) => {
-  try {
-    const { category } = req.params;
-    let query = 'SELECT * FROM fair_market_value';
-    if (category && category !== 'all') {
-      query += ' WHERE category = $(category)';
-    }
-    const items = await db.query(query, {
+  const updateItem = await db.query(
+    `UPDATE fair_market_value SET
+      item_id = $(id)
+      ${itemName ? `, item_name = $(itemName)` : ``}
+      ${quantityType ? `, quantity_type = $(quantityType)` : ``}
+      ${price ? `, price = $(price)` : ``}
+      ${category ? `, category = $(category)` : ``}
+      WHERE item_id = $(id)
+      RETURNING *;`,
+    {
+      itemName,
+      quantityType,
+      price,
       category,
-    });
-    res.status(200).send(items);
+      id,
+    },
+  );
+  try {
+    return res.status(200).send(updateItem[0]);
   } catch (err) {
-    res.status(500).send(err.message);
+    return res.status(500).send(err.message);
   }
 });
 
@@ -99,7 +113,7 @@ valueRouter.delete('/:id', async (req, res) => {
   try {
     const { id } = req.params;
 
-    await db.query(
+    const msg = await db.query(
       `
       DELETE
       FROM fair_market_value
@@ -107,6 +121,7 @@ valueRouter.delete('/:id', async (req, res) => {
       `,
       { id },
     );
+    res.status(200).send(msg);
   } catch (err) {
     res.status(500).send(err.message);
   }
