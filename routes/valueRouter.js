@@ -105,7 +105,24 @@ valueRouter.put('/:id', async (req, res) => {
   try {
     return res.status(200).send(updateItem[0]);
   } catch (err) {
-    return res.status(500).send(err.message);
+    res.status(500).send(err.message);
+  }
+});
+
+// GET values by category
+valueRouter.get('/filter/:category', async (req, res) => {
+  try {
+    const { category } = req.params;
+    let query = 'SELECT * FROM fair_market_value';
+    if (category && category !== 'all') {
+      query += ' WHERE category = $(category)';
+    }
+    const items = await db.query(query, {
+      category,
+    });
+    res.status(200).send(items);
+  } catch (err) {
+    res.status(500).send(err.message);
   }
 });
 

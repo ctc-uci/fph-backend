@@ -9,11 +9,35 @@ const businessRouter = express.Router();
 // GET all businesses
 businessRouter.get('/', async (req, res) => {
   try {
-    const allBusinesses = await db.query(`
+    const { businessLimit, pageNum, tab } = req.query;
+    const tabsWhereClause = tab ? `WHERE status='${tab}'` : '';
+
+    const allBusinesses = await db.query(
+      `
       SELECT *
-      FROM business;
-    `);
+      FROM business
+      ${tabsWhereClause}
+      ${businessLimit ? ` LIMIT ${businessLimit}` : ''}
+      ${pageNum ? ` OFFSET ${(pageNum - 1) * businessLimit}` : ''};`,
+      { businessLimit, pageNum },
+    );
     res.status(200).send(allBusinesses);
+  } catch (err) {
+    res.status(500).send(err.message);
+  }
+});
+
+businessRouter.get('/totalBusinesses', async (req, res) => {
+  try {
+    const { tab } = req.query;
+    const tabsWhereClause = tab ? `WHERE status='${tab}'` : '';
+
+    const totalSites = await db.query(`
+      SELECT COUNT(*)
+      FROM business
+      ${tabsWhereClause}
+    `);
+    res.status(200).send(totalSites);
   } catch (err) {
     res.status(500).send(err.message);
   }
@@ -207,7 +231,7 @@ businessRouter.put('/:id', async (req, res) => {
       }
     }
     query += updateFields.join(', ');
-    query += ` WHERE id = ${id}`;
+    query += `WHERE id = ${id}`;
 
     await db.query(query);
 
