@@ -7,14 +7,10 @@ const donationRouter = express.Router();
 // GET all donations
 donationRouter.get('/', async (req, res) => {
   try {
-    const { donationsLimit, pageNum } = req.query;
     const donation = await db.query(
       `
       SELECT *
-      FROM donation_tracking
-      ${donationsLimit ? ` LIMIT ${donationsLimit}` : ''}
-      ${pageNum ? ` OFFSET ${(pageNum - 1) * donationsLimit}` : ''};`,
-      { donationsLimit, pageNum },
+      FROM donation_tracking`,
     );
     res.status(200).send(donation);
   } catch (err) {
@@ -22,23 +18,10 @@ donationRouter.get('/', async (req, res) => {
   }
 });
 
-// GET donation where it equals a specific tab
-donationRouter.get('/totalDonations', async (req, res) => {
-  try {
-    const totalSites = await db.query(`
-      SELECT COUNT(*)
-      FROM donation_tracking
-    `);
-    res.status(200).send(totalSites);
-  } catch (err) {
-    res.status(500).send(err.message);
-  }
-});
-
 // GET the amount of donations that fit similar to that of the stringToSearch
-donationRouter.get('/totalDonations/:stringToSearch', async (req, res) => {
+donationRouter.get('/totalDonations/:stringToSearch?', async (req, res) => {
   try {
-    const { stringToSearch } = req.params;
+    const stringToSearch = req.params.stringToSearch || '';
     const totalSites = await db.query(`
       SELECT COUNT(*)
       FROM donation_tracking
@@ -52,9 +35,9 @@ donationRouter.get('/totalDonations/:stringToSearch', async (req, res) => {
 });
 
 // GET donations that fit the string to search
-donationRouter.get('/search/:stringToSearch', async (req, res) => {
+donationRouter.get('/search/:stringToSearch?', async (req, res) => {
   try {
-    const { stringToSearch } = req.params;
+    const stringToSearch = req.params.stringToSearch || '';
     const { donationsLimit, pageNum } = req.query;
     const stringMatch = await db.query(
       `
