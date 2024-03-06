@@ -150,15 +150,15 @@ donationRouter.get('/totalDonations/:filter', async (req, res) => {
   }
 });
 
-// GET the amount of donations that fit similar to that of the stringToSearch
-donationRouter.get('/countDonations/:stringToSearch', async (req, res) => {
+// GET the amount of donations that fit similar to that of the searchTerm
+donationRouter.get('/filter/searchCount', async (req, res) => {
   try {
-    const stringToSearch = req.params || '';
+    const { searchTerm } = req.query;
     const totalSites = await db.query(`
       SELECT COUNT(*)
       FROM donation_tracking
-      WHERE reporter ILIKE '%${stringToSearch}%'
-      OR food_bank_donation ILIKE '%${stringToSearch}%'
+      WHERE reporter ILIKE '%${searchTerm}%'
+      OR food_bank_donation ILIKE '%${searchTerm}%'
     `);
     res.status(200).send(totalSites);
   } catch (err) {
