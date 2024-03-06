@@ -231,7 +231,7 @@ businessRouter.put('/:id', async (req, res) => {
       }
     }
     query += updateFields.join(', ');
-    query += ` WHERE id = ${id}`;
+    query += `WHERE id = ${id}`;
 
     await db.query(query);
 
