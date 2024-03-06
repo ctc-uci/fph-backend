@@ -150,6 +150,42 @@ donationRouter.get('/totalDonations/:filter', async (req, res) => {
   }
 });
 
+// GET the amount of donations that fit similar to that of the stringToSearch
+donationRouter.get('/countDonations/:stringToSearch', async (req, res) => {
+  try {
+    const stringToSearch = req.params || '';
+    const totalSites = await db.query(`
+      SELECT COUNT(*)
+      FROM donation_tracking
+      WHERE reporter ILIKE '%${stringToSearch}%'
+      OR food_bank_donation ILIKE '%${stringToSearch}%'
+    `);
+    res.status(200).send(totalSites);
+  } catch (err) {
+    res.status(500).send(err.message);
+  }
+});
+
+// GET donations that fit the string to search
+donationRouter.get('/filter/search', async (req, res) => {
+  try {
+    const { searchTerm, donationsLimit, pageNum } = req.query;
+    const search = searchTerm.split('+').join(' ');
+    const stringMatch = await db.query(
+      `
+      SELECT *
+      FROM donation_tracking
+      WHERE reporter ILIKE '%${search}%'
+        OR food_bank_donation ILIKE '%${search}%'
+      ${donationsLimit ? ` LIMIT ${donationsLimit}` : ''}
+      ${pageNum ? ` OFFSET ${(pageNum - 1) * donationsLimit}` : ''};`,
+    );
+    res.status(200).send(stringMatch);
+  } catch (err) {
+    res.status(500).send(err.message);
+  }
+});
+
 // Route for filtering donations made in the specified time frame and paginated
 donationRouter.get('/filter/:filter', async (req, res) => {
   const siteResultLimit = 10; // how many results we want to show
