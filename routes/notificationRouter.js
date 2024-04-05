@@ -15,9 +15,12 @@ notificationRouter.get('/', async (req, res) => {
 notificationRouter.get('/:id', async (req, res) => {
   const { id } = req.params;
   try {
-    const idNotification = await db.query('SELECT * FROM notification WHERE business_id = $(id);', {
-      id,
-    });
+    const idNotification = await db.query(
+      'SELECT * FROM notification WHERE business_id = $(id) ORDER BY timestamp DESC;',
+      {
+        id,
+      },
+    );
     res.status(200).send(idNotification);
   } catch (err) {
     res.status(500).send(err.message);
@@ -69,6 +72,25 @@ notificationRouter.put('/:id', async (req, res) => {
     return res.status(200).send(updateNotification[0]);
   } catch (err) {
     return res.status(500).send(err.message);
+  }
+});
+
+notificationRouter.get('/request/:id', async (req, res) => {
+  const { id } = req.params;
+
+  const message = `'Business ID: ${id} is requesting:%'`;
+
+  const idNotification = await db.query(
+    `SELECT * FROM notification WHERE business_id = 0 AND message LIKE ${message} ORDER BY timestamp DESC;`,
+    {
+      id,
+    },
+  );
+
+  try {
+    res.status(200).send(idNotification);
+  } catch (err) {
+    res.status(500).send(err.message);
   }
 });
 
