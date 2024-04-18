@@ -28,15 +28,21 @@ notificationRouter.get('/:id', async (req, res) => {
 });
 
 notificationRouter.post('/', async (req, res) => {
-  const { business_id: businessId, message, timestamp, been_dismissed: beenDismissed } = req.body;
+  const {
+    business_id: businessId,
+    message,
+    timestamp,
+    been_dismissed: beenDismissed,
+    type,
+  } = req.body;
   try {
     await db.query(
       `
-        INSERT INTO notification (business_id, message, timestamp, been_dismissed)
+        INSERT INTO notification (business_id, message, timestamp, been_dismissed, type)
         VALUES
-        ($(businessId), $(message), $(timestamp), $(beenDismissed));
+        ($(businessId), $(message), $(timestamp), $(beenDismissed), $(type));
       `,
-      { businessId, message, timestamp, beenDismissed },
+      { businessId, message, timestamp, beenDismissed, type },
     );
     res.status(200).json({
       status: 'Success',
@@ -78,10 +84,10 @@ notificationRouter.put('/:id', async (req, res) => {
 notificationRouter.get('/request/:id', async (req, res) => {
   const { id } = req.params;
 
-  const message = `'Business ID: ${id} is requesting:%'`;
+  const message = `'Business ID: ${id}%'`;
 
   const idNotification = await db.query(
-    `SELECT * FROM notification WHERE business_id = 0 AND message LIKE ${message} ORDER BY timestamp DESC;`,
+    `SELECT * FROM notification WHERE business_id = 0 AND message LIKE ${message} AND type='Supply Request' ORDER BY timestamp DESC;`,
     {
       id,
     },
