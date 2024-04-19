@@ -32,12 +32,12 @@ adminUserRouter.post('/', async (req, res) => {
 adminUserRouter.put('/:email', async (req, res) => {
   const { email } = req.params;
 
-  const { name, last_updated: lastUpdated } = req.body;
+  const { name, email: newEmail, last_updated: lastUpdated } = req.body;
 
   try {
     const updateAdmin = await db.query(
       `UPDATE public.admin_users SET 
-        email = $(email)
+        email = $(newEmail)
         ${name ? `, name = $(name)` : ``}
         ${lastUpdated ? `, last_updated = $(lastUpdated)` : ``}
         WHERE email = $(email)
@@ -45,6 +45,7 @@ adminUserRouter.put('/:email', async (req, res) => {
       {
         name,
         lastUpdated,
+        newEmail,
         email,
       },
     );
