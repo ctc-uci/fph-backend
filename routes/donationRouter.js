@@ -342,13 +342,9 @@ donationRouter.post('/', async (req, res) => {
     } = req.body;
 
     if (!business_id) throw new Error('Business ID is required.');
-
     if (!food_bank_donation) throw new Error('Food bank donation is required.');
-
     if (!reporter) throw new Error('Reporter is required.');
-
     if (!email) throw new Error('Email is required.');
-
     if (!date) throw new Error('Date is required.');
 
     const newFacility = await db.query(
@@ -370,6 +366,16 @@ donationRouter.post('/', async (req, res) => {
     return res.status(200).send(newFacility);
   } catch (err) {
     return res.status(500).send(err.message);
+  }
+});
+
+donationRouter.post('/addDonationItem', async (req, res) => {
+  try {
+    const { itemName } = req.body;
+    await db.query(`ALTER TABLE donation_tracking
+      ADD (${itemName}) VARCHAR`);
+  } catch (err) {
+    res.status(500).send(err.message);
   }
 });
 

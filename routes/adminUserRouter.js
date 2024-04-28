@@ -13,6 +13,62 @@ adminUserRouter.get('/', async (req, res) => {
   }
 });
 
+const generateWhereClause = (search) => {
+  const columns = ['name', 'email', 'last_updated'];
+  let searchWhereClause = '';
+
+  if (search.length > 0) {
+    searchWhereClause = `${` WHERE `}`;
+    searchWhereClause += columns
+      .map((column) => {
+        return `CAST(${column} AS TEXT) ILIKE '%' || $(search) || '%'`;
+      })
+      .join(' OR ');
+  }
+  return { searchWhereClause };
+};
+
+adminUserRouter.get('/totalValues', async (req, res) => {
+  try {
+    const { searchTerm } = req.query;
+    const search = searchTerm.split('+').join(' ');
+    const { searchWhereClause } = generateWhereClause(search);
+    const totalSites = await db.query(
+      `
+        SELECT COUNT(*)
+        FROM public.admin_users
+        ${searchWhereClause};
+      `,
+      { search },
+    );
+    res.status(200).send(totalSites);
+  } catch (err) {
+    res.status(500).send(err.message);
+  }
+});
+
+adminUserRouter.get('/paginate', async (req, res) => {
+  try {
+    const { itemsLimit, pageNum, searchTerm } = req.query;
+    const search = searchTerm.split('+').join(' ');
+    const { searchWhereClause } = generateWhereClause(search);
+    const admins = await db.query(
+      `
+      SELECT *
+      from public.admin_users
+      ${searchWhereClause}
+      ORDER BY email
+      ${itemsLimit ? ` LIMIT ${itemsLimit}` : ''}
+      ${pageNum ? ` OFFSET ${(pageNum - 1) * itemsLimit}` : ''};
+    `,
+      { search, itemsLimit, pageNum },
+    );
+    res.status(200).send(admins);
+  } catch (error) {
+    res.status(500).send(error.message);
+  }
+});
+
 adminUserRouter.get('/:email', async (req, res) => {
   try {
     const { email } = req.params;
@@ -53,7 +109,7 @@ adminUserRouter.put('/:email', async (req, res) => {
 
   try {
     const updateAdmin = await db.query(
-      `UPDATE public.admin_users SET 
+      `UPDATE public.admin_users SET
         email = $(newEmail)
         ${name ? `, name = $(name)` : ``}
         ${lastUpdated ? `, last_updated = $(lastUpdated)` : ``}
