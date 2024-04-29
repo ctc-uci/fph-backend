@@ -77,6 +77,48 @@ businessRouter.get('/order/:column/:sortType', async (req, res) => {
   }
 });
 
+const generateWhereClause = (tab, searchTerm) => {
+  if (tab === 'All') {
+    return ``;
+  }
+  if (tab === 'Submitted') {
+    return `
+      b
+      JOIN
+      (
+        SELECT id, MAX(date)
+        AS max_date
+        FROM donation
+        GROUP BY id
+      )
+      AS latest_donation ON b.id = latest_donation.id
+      JOIN donation d ON b.id = d.id AND d.date = latest_donation.max_date
+      WHERE d.date > (CURRENT_DATE - interval '3 months') `; 
+  }
+  if (tab === 'Pending') {
+    return `
+      b
+      JOIN
+      (
+        SELECT id, MAX(date)
+        AS max_date
+        FROM donation
+        GROUP BY id
+      )
+      AS latest_donation ON b.id = latest_donation.id
+      JOIN donation d ON b.id = d.id AND d.date = latest_donation.max_date
+      WHERE d.date < (CURRENT_DATE - interval '3 months') `;
+  }
+}
+
+businessRouter.get('/filter', async (req, res) => {
+  const { tab, searchTerm } = req.params;
+  const whereClause = generateWhereClause(tab, searchTerm);
+  try{
+
+  }
+});
+
 //  POST add a new business
 businessRouter.post('/', async (req, res) => {
   try {
