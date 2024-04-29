@@ -103,7 +103,7 @@ valueRouter.put('/:id', async (req, res) => {
     },
   );
   try {
-    return res.status(200).send(updateItem[0]);
+    res.status(200).send(updateItem[0]);
   } catch (err) {
     res.status(500).send(err.message);
   }

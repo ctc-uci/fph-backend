@@ -6,6 +6,46 @@ const camelToSnakeCase = require('./utils');
 
 const businessRouter = express.Router();
 
+const generateWhereClause = (tab, searchTerm) => {
+  let clause = '';
+  if (tab === 'Submitted') {
+    clause = `
+      b
+      JOIN
+      (
+        SELECT business_id, MAX(date)
+        AS max_date
+        FROM donation_tracking
+        GROUP BY business_id
+      )
+      AS latest_donation ON b.id = latest_donation.business_id
+      WHERE latest_donation.max_date >= (CURRENT_DATE - interval '3 months') AND b.status != 'Inactive'`;
+  } else if (tab === 'NotSubmitted') {
+    clause = `
+      b
+      JOIN
+      (
+        SELECT business_id, MAX(date)
+        AS max_date
+        FROM donation_tracking
+        GROUP BY business_id
+      )
+      AS latest_donation ON b.id = latest_donation.business_id
+      WHERE latest_donation.max_date < (CURRENT_DATE - interval '3 months') AND b.status != 'Inactive'`;
+  } else if (tab === 'Pending') {
+    clause = ` WHERE status='Pending'`;
+  }
+  if (searchTerm) {
+    if (!clause) {
+      clause = ` WHERE`;
+    } else {
+      clause += ` AND`;
+    }
+    clause += ` (name ILIKE '%${searchTerm}%' OR city ILIKE '%${searchTerm}%' OR state ILIKE '%${searchTerm}%' OR primary_email ILIKE '%${searchTerm}%')`;
+  }
+  return clause;
+};
+
 // GET all businesses
 businessRouter.get('/', async (req, res) => {
   try {
@@ -29,8 +69,8 @@ businessRouter.get('/', async (req, res) => {
 
 businessRouter.get('/totalBusinesses', async (req, res) => {
   try {
-    const { tab } = req.query;
-    const tabsWhereClause = tab ? `WHERE status='${tab}'` : '';
+    const { tab, searchTerm } = req.query;
+    const tabsWhereClause = generateWhereClause(tab, searchTerm);
 
     const totalSites = await db.query(`
       SELECT COUNT(*)
@@ -77,45 +117,23 @@ businessRouter.get('/order/:column/:sortType', async (req, res) => {
   }
 });
 
-const generateWhereClause = (tab, searchTerm) => {
-  if (tab === 'All') {
-    return ``;
-  }
-  if (tab === 'Submitted') {
-    return `
-      b
-      JOIN
-      (
-        SELECT id, MAX(date)
-        AS max_date
-        FROM donation
-        GROUP BY id
-      )
-      AS latest_donation ON b.id = latest_donation.id
-      JOIN donation d ON b.id = d.id AND d.date = latest_donation.max_date
-      WHERE d.date > (CURRENT_DATE - interval '3 months') `; 
-  }
-  if (tab === 'Pending') {
-    return `
-      b
-      JOIN
-      (
-        SELECT id, MAX(date)
-        AS max_date
-        FROM donation
-        GROUP BY id
-      )
-      AS latest_donation ON b.id = latest_donation.id
-      JOIN donation d ON b.id = d.id AND d.date = latest_donation.max_date
-      WHERE d.date < (CURRENT_DATE - interval '3 months') `;
-  }
-}
-
-businessRouter.get('/filter', async (req, res) => {
-  const { tab, searchTerm } = req.params;
+businessRouter.get('/filter/:tab', async (req, res) => {
+  const { tab } = req.params;
+  const { pageNum, pageLimit, searchTerm } = req.query;
   const whereClause = generateWhereClause(tab, searchTerm);
-  try{
-
+  try {
+    const businesses = await db.query(
+      `
+      SELECT *
+      FROM business
+      ${whereClause}
+      LIMIT ${pageLimit}
+      OFFSET ${(pageNum - 1) * pageLimit};
+    `,
+    );
+    res.status(200).send(businesses);
+  } catch (err) {
+    res.status(500).send(err.message);
   }
 });
 
