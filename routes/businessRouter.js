@@ -7,31 +7,27 @@ const camelToSnakeCase = require('./utils');
 const businessRouter = express.Router();
 
 const generateWhereClause = (tab, searchTerm) => {
-  let clause = '';
+  let clause = `LEFT JOIN
+  (
+    SELECT business_id,
+    MAX(date) AS max_date
+    FROM donation_tracking
+    GROUP BY business_id
+  )
+  AS latest_donation ON b.id = latest_donation.business_id
+  LEFT JOIN (
+    SELECT business_id,
+    MAX(timestamp) AS max_date
+    FROM notification
+    GROUP BY business_id
+  )
+  AS latest_notification ON b.id = latest_notification.business_id`;
   if (tab === 'Submitted') {
-    clause = `
-      b
-      JOIN
-      (
-        SELECT business_id, MAX(date)
-        AS max_date
-        FROM donation_tracking
-        GROUP BY business_id
-      )
-      AS latest_donation ON b.id = latest_donation.business_id
-      WHERE latest_donation.max_date >= (CURRENT_DATE - interval '3 months') AND b.status != 'Inactive'`;
+    clause += `
+      WHERE latest_donation.max_date >= (CURRENT_DATE - interval '3 months')`;
   } else if (tab === 'NotSubmitted') {
-    clause = `
-      b
-      JOIN
-      (
-        SELECT business_id, MAX(date)
-        AS max_date
-        FROM donation_tracking
-        GROUP BY business_id
-      )
-      AS latest_donation ON b.id = latest_donation.business_id
-      WHERE latest_donation.max_date < (CURRENT_DATE - interval '3 months') AND b.status != 'Inactive'`;
+    clause += `
+      WHERE latest_donation.max_date < (CURRENT_DATE - interval '3 months')`;
   } else if (tab === 'Pending') {
     clause = ` WHERE status='Pending'`;
   }
@@ -55,7 +51,7 @@ businessRouter.get('/', async (req, res) => {
     const allBusinesses = await db.query(
       `
       SELECT *
-      FROM business
+      FROM business b
       ${tabsWhereClause}
       ${businessLimit ? ` LIMIT ${businessLimit}` : ''}
       ${pageNum ? ` OFFSET ${(pageNum - 1) * businessLimit}` : ''};`,
@@ -74,7 +70,7 @@ businessRouter.get('/totalBusinesses', async (req, res) => {
 
     const totalSites = await db.query(`
       SELECT COUNT(*)
-      FROM business
+      FROM business b
       ${tabsWhereClause}
     `);
     res.status(200).send(totalSites);
@@ -124,8 +120,10 @@ businessRouter.get('/filter/:tab', async (req, res) => {
   try {
     const businesses = await db.query(
       `
-      SELECT *
-      FROM business
+      SELECT *,
+      (latest_donation.max_date >= (CURRENT_DATE - interval '3 months')) AS submitted,
+      (latest_notification.max_date >= (CURRENT_DATE - interval '1 months')) AS notified
+      FROM business b
       ${whereClause}
       LIMIT ${pageLimit}
       OFFSET ${(pageNum - 1) * pageLimit};

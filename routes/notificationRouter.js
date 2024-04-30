@@ -28,13 +28,8 @@ notificationRouter.get('/:id', async (req, res) => {
 });
 
 notificationRouter.post('/', async (req, res) => {
-  const {
-    business_id: businessId,
-    message,
-    timestamp,
-    been_dismissed: beenDismissed,
-    type,
-  } = req.body;
+  const { businessId, message, timestamp, beenDismissed, type } = req.body;
+  console.log(businessId, message, timestamp, beenDismissed, type);
   try {
     await db.query(
       `
