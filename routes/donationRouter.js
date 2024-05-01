@@ -35,58 +35,25 @@ donationRouter.get('/totalDonations', async (req, res) => {
   }
 });
 
-// GET CSV donation selecting by id
-// eslint-disable-next-line consistent-return
-donationRouter.get('/:tableName/selectByIds', async (req, res) => {
+donationRouter.get('/selectByIds', async (req, res) => {
   try {
-    const { tableName } = req.params;
     const { ids } = req.query;
-    let rows;
-
-    // Check if the table name is valid and exists in the database
-    const tableExists = await db.query(`
-      SELECT EXISTS (
-        SELECT FROM information_schema.tables
-        WHERE table_name = '${tableName}'
-      );
-    `);
-
-    if (!tableExists[0].exists) {
-      console.log(`Table '${tableName}' does not exist.`);
-      return res.status(404).send(`Table '${tableName}' does not exist.`);
-    }
-
-    // Convert the comma-separated IDs string to an array
-    const idsArray = ids.split(',');
-    // Construct the SQL query based on the provided IDs
-
-    if (tableName === 'donation_tracking') {
-      const query = `
-      SELECT *
-      FROM ${tableName}
-      WHERE donation_id IN (${idsArray.map((id) => `'${id}'`).join(',')});
-      `;
-      rows = await db.query(query);
-    } else if (tableName === 'notification') {
-      const query = `
-      SELECT *
-      FROM ${tableName}
-      WHERE notification_id IN (${idsArray.map((id) => `'${id}'`).join(',')});
-      `;
-      rows = await db.query(query);
-    } else {
-      // if table is business
-      const query = `
-      SELECT *
-      FROM ${tableName}
-      WHERE id IN (${idsArray.map((id) => `'${id}'`).join(',')});
-      `;
-      rows = await db.query(query);
-    }
-
-    res.status(200).send(rows);
+    const data = await db.query(
+      `SELECT *
+      FROM business b
+      LEFT JOIN (
+        SELECT business_id, MAX(date) as max_date
+        FROM donation_tracking
+        GROUP BY business_id
+      ) as latest_donation ON b.id = latest_donation.business_id
+      LEFT JOIN (
+        SELECT *
+        FROM donation_tracking
+      ) as latest_donation_info ON (latest_donation.business_id = latest_donation_info.business_id AND latest_donation.max_date = latest_donation_info.date)
+      WHERE b.id IN (${ids}) AND latest_donation.max_date >= (CURRENT_DATE - interval '3 months');`,
+    );
+    res.status(200).send(data);
   } catch (err) {
-    console.error('Error:', err);
     res.status(500).send(err.message);
   }
 });
@@ -104,63 +71,6 @@ donationRouter.get('/:donationId', async (req, res) => {
     res.status(200).send(donation);
   } catch (err) {
     res.status(500).send(err.message);
-  }
-});
-
-// GET CSV donation selecting by id
-donationRouter.get('/:tableName/selectByIds', async (req, res) => {
-  try {
-    const { tableName } = req.params;
-    const { ids } = req.query;
-    let rows;
-
-    // Check if the table name is valid and exists in the database
-    const tableExists = await db.query(`
-      SELECT EXISTS (
-        SELECT FROM information_schema.tables
-        WHERE table_name = '${tableName}'
-      );
-    `);
-
-    if (!tableExists[0].exists) {
-      console.log(`Table '${tableName}' does not exist.`);
-      return res.status(404).send(`Table '${tableName}' does not exist.`);
-    }
-
-    // Convert the comma-separated IDs string to an array
-    const idsArray = ids.split(',');
-    // Construct the SQL query based on the provided IDs
-
-    if (tableName === 'donation_tracking') {
-      const query = `
-      SELECT *
-      FROM ${tableName}
-      WHERE donation_id IN (${idsArray.map((id) => `'${id}'`).join(',')});
-      `;
-      rows = await db.query(query);
-    } else if (tableName === 'notification') {
-      const query = `
-      SELECT *
-      FROM ${tableName}
-      WHERE notifcation_id IN (${idsArray.map((id) => `'${id}'`).join(',')});
-      `;
-      rows = await db.query(query);
-    } else {
-      // if table is business
-      const query = `
-      SELECT *
-      FROM ${tableName}
-      WHERE id IN (${idsArray.map((id) => `'${id}'`).join(',')});
-      `;
-      rows = await db.query(query);
-    }
-
-    res.status(200).send(rows);
-    return undefined;
-  } catch (err) {
-    console.error('Error:', err);
-    res.status(500).send(err.message);
-    return undefined;
   }
 });
 
