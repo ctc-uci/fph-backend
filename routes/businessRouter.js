@@ -17,27 +17,24 @@ const generateWhereClause = (tab, searchTerm) => {
   AS latest_donation ON b.id = latest_donation.business_id
   LEFT JOIN (
     SELECT business_id,
-    MAX(timestamp) AS max_date
+    MAX(timestamp) AS max_notif_date
     FROM notification
     GROUP BY business_id
   )
-  AS latest_notification ON b.id = latest_notification.business_id`;
+  AS latest_notification ON b.id = latest_notification.business_id
+  WHERE status != 'Pending'`;
   if (tab === 'Submitted') {
     clause += `
-      WHERE latest_donation.max_date >= (CURRENT_DATE - interval '3 months')`;
+      AND latest_donation.max_date >= (CURRENT_DATE - interval '3 months')`;
   } else if (tab === 'NotSubmitted') {
     clause += `
-      WHERE latest_donation.max_date < (CURRENT_DATE - interval '3 months')`;
+      AND (latest_donation.max_date < (CURRENT_DATE - interval '3 months') OR latest_donation.business_id IS NULL)`;
   } else if (tab === 'Pending') {
     clause = ` WHERE status='Pending'`;
   }
   if (searchTerm) {
-    if (!clause) {
-      clause = ` WHERE`;
-    } else {
-      clause += ` AND`;
-    }
-    clause += ` (name ILIKE '%${searchTerm}%' OR city ILIKE '%${searchTerm}%' OR state ILIKE '%${searchTerm}%' OR primary_email ILIKE '%${searchTerm}%')`;
+    const search = searchTerm.replace('+', ' ');
+    clause += ` AND (name ILIKE '%${search}%' OR city ILIKE '%${search}%' OR state ILIKE '%${search}%' OR primary_email ILIKE '%${search}%')`;
   }
   return clause;
 };
@@ -121,13 +118,15 @@ businessRouter.get('/filter/:tab', async (req, res) => {
     const businesses = await db.query(
       `
       SELECT *,
-      (latest_donation.max_date >= (CURRENT_DATE - interval '3 months')) AS submitted,
-      (latest_notification.max_date >= (CURRENT_DATE - interval '1 months')) AS notified
+      ${
+        tab === 'Pending' ||
+        `(latest_donation.max_date >= (CURRENT_DATE - interval '3 months')) AS submitted,
+      (latest_notification.max_notif_date >= (CURRENT_DATE - interval '1 months')) AS notified`
+      }
       FROM business b
       ${whereClause}
-      LIMIT ${pageLimit}
-      OFFSET ${(pageNum - 1) * pageLimit};
-    `,
+      ${pageLimit ? `LIMIT ${pageLimit}` : ``}
+      ${pageNum && pageLimit ? `OFFSET ${(pageNum - 1) * pageLimit}` : ``};`,
     );
     res.status(200).send(businesses);
   } catch (err) {
@@ -193,6 +192,7 @@ businessRouter.post('/', async (req, res) => {
       createdBy,
       createdDate,
       city,
+      residential,
     } = req.body;
 
     const newBusiness = await db.query(
@@ -206,11 +206,11 @@ businessRouter.post('/', async (req, res) => {
         wellness, spay_neuter, financial, re_home, er_boarding, senior, cancer,
         dog, cat, fph_phone, contact_phone, web_notes, internal_notes,
         published, shelter, domestic_violence, web_date_init, ent_qb,
-        service_request, inactive, final_check, created_by, created_date, city)
+        service_request, inactive, final_check, created_by, created_date, city, residential)
       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16,
               $17, $18, $19, $20, $21, $22, $23, $24, $25, $26, $27, $28, $29, $30,
               $31, $32, $33, $34, $35, $36, $37, $38, $39, $40, $41, $42, $43, $44,
-              $45, $46, $47, $48, $49, $50, $51, $52, $53, $54)
+              $45, $46, $47, $48, $49, $50, $51, $52, $53, $54, $55)
       RETURNING *`,
       [
         type,
@@ -267,6 +267,7 @@ businessRouter.post('/', async (req, res) => {
         createdBy,
         createdDate,
         city,
+        residential,
       ],
     );
     res.status(200).send(newBusiness);
