@@ -9,6 +9,7 @@ const notificationRouter = require('./routes/notificationRouter');
 const valueRouter = require('./routes/valueRouter');
 const businessUserRouter = require('./routes/businessUserRouter');
 const adminUserRouter = require('./routes/adminUserRouter');
+const emailRouter = require('./routes/emailRouter');
 
 const app = express();
 app.use(express.json());
@@ -27,6 +28,7 @@ app.use('/notification', notificationRouter);
 app.use('/value', valueRouter);
 app.use('/businessUser', businessUserRouter);
 app.use('/adminUser', adminUserRouter);
+app.use('/email', emailRouter);
 
 app.listen(PORT, () => {
   console.log(`Server listening on ${PORT}`);

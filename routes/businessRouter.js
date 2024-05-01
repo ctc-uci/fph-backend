@@ -48,7 +48,7 @@ businessRouter.get('/', async (req, res) => {
     const allBusinesses = await db.query(
       `
       SELECT *
-      FROM business b
+      FROM business
       ${tabsWhereClause}
       ${businessLimit ? ` LIMIT ${businessLimit}` : ''}
       ${pageNum ? ` OFFSET ${(pageNum - 1) * businessLimit}` : ''};`,
