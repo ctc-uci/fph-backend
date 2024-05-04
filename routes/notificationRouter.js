@@ -5,7 +5,7 @@ const notificationRouter = express.Router();
 
 notificationRouter.get('/', async (req, res) => {
   try {
-    const allNotifications = await db.query('SELECT * FROM notification;');
+    const allNotifications = await db.query('SELECT * FROM notification ORDER BY timestamp DESC;');
     res.status(200).send(allNotifications);
   } catch (err) {
     res.status(500).send(err.message);
@@ -28,15 +28,16 @@ notificationRouter.get('/:id', async (req, res) => {
 });
 
 notificationRouter.post('/', async (req, res) => {
-  const { businessId, message, timestamp, beenDismissed, type } = req.body;
+  const { businessId, message, type, senderId, businessName, donationId } = req.body;
+  const timestamp = new Date().toISOString('en-US', { timeZone: 'America/Los_Angeles' });
   try {
     await db.query(
       `
-        INSERT INTO notification (business_id, message, timestamp, been_dismissed, type)
+        INSERT INTO notification (business_id, message, timestamp, type, sender_id, business_name, donation_id)
         VALUES
-        ($(businessId), $(message), $(timestamp), $(beenDismissed), $(type));
+        ($(businessId), $(message), $(timestamp), $(type), $(senderId), $(businessName), $(donationId));
       `,
-      { businessId, message, timestamp, beenDismissed, type },
+      { businessId, message, timestamp, type, senderId, businessName, donationId },
     );
     res.status(200).json({
       status: 'Success',
@@ -49,7 +50,8 @@ notificationRouter.post('/', async (req, res) => {
 notificationRouter.put('/:id', async (req, res) => {
   const { id } = req.params;
 
-  const { business_id: businessId, message, timestamp, been_dismissed: beenDismissed } = req.body;
+  const { businessId, message, type, senderId, businessName, donationId } = req.body;
+  const timestamp = new Date().toISOString('en-US', { timeZone: 'America/Los_Angeles' });
 
   const updateNotification = await db.query(
     `UPDATE notification SET
@@ -57,15 +59,20 @@ notificationRouter.put('/:id', async (req, res) => {
       ${businessId ? `, business_id = $(businessId)` : ``}
       ${message ? `, message = $(message)` : ``}
       ${timestamp ? `, timestamp = $(timestamp)` : ``}
-      ${beenDismissed ? `, been_dismissed = $(beenDismissed)` : ``}
+      ${type ? `, type = $(type)` : ``}
+      ${senderId ? `, sender_id = $(senderId)` : ``}
+      ${businessName ? `, business_name = $(businessName)` : ``},
+      ${donationId ? `, donation_id = $(donationId)` : ``}
       WHERE notification_id = $(id)
       RETURNING *;`,
     {
       businessId,
       message,
       timestamp,
-      beenDismissed,
       id,
+      senderId,
+      businessName,
+      donationId,
     },
   );
   try {
@@ -78,15 +85,12 @@ notificationRouter.put('/:id', async (req, res) => {
 notificationRouter.get('/request/:id', async (req, res) => {
   const { id } = req.params;
 
-  const message = `'Business ID: ${id}%'`;
-
   const idNotification = await db.query(
-    `SELECT * FROM notification WHERE business_id = 0 AND message LIKE ${message} AND type='Supply Request' ORDER BY timestamp DESC;`,
+    `SELECT * FROM notification WHERE business_id=0 AND sender_id=$(id) AND type='Supply Request' ORDER BY timestamp DESC;`,
     {
       id,
     },
   );
-
   try {
     res.status(200).send(idNotification);
   } catch (err) {
