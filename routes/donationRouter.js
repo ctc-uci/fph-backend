@@ -78,7 +78,7 @@ donationRouter.get('/business/:businessId', async (req, res) => {
   try {
     const { businessId } = req.params;
     const donation = await db.query(
-      'SELECT * FROM donation_tracking WHERE business_id = $(businessId)',
+      'SELECT * FROM donation_tracking WHERE business_id = $(businessId) ORDER BY date DESC',
       {
         businessId,
       },
