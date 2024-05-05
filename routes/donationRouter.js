@@ -173,6 +173,23 @@ donationRouter.get('/totalDonations/:filter', async (req, res) => {
   }
 });
 
+// GET the amount of donations that fit similar to that of the searchTerm for a specific business
+donationRouter.get('/filter/searchCount', async (req, res) => {
+  try {
+    const { businessId, searchTerm } = req.query;
+    const totalSites = await db.query(`
+      SELECT COUNT(*)
+      FROM donation_tracking
+      WHERE (reporter ILIKE '%${searchTerm}%'
+      OR food_bank_donation ILIKE '%${searchTerm}%')
+      AND business_id = ${businessId}
+    `);
+    res.status(200).send(totalSites);
+  } catch (err) {
+    res.status(500).send(err.message);
+  }
+});
+
 // GET the amount of donations that fit similar to that of the searchTerm
 donationRouter.get('/filter/searchCount', async (req, res) => {
   try {
@@ -189,10 +206,33 @@ donationRouter.get('/filter/searchCount', async (req, res) => {
   }
 });
 
+// GET donations that fit the string to search for a specific business
+donationRouter.get('/filter/search', async (req, res) => {
+  try {
+    const { businessId, searchTerm, donationsLimit, pageNum } = req.query;
+    const search = searchTerm.split('+').join(' ');
+    const stringMatch = await db.query(
+      `
+      SELECT *
+      FROM donation_tracking
+      WHERE (reporter ILIKE '%${search}%'
+        OR food_bank_donation ILIKE '%${search}%')
+        AND business_id = ${businessId}
+      ${donationsLimit ? ` LIMIT ${donationsLimit}` : ''}
+      ${pageNum ? ` OFFSET ${(pageNum - 1) * donationsLimit}` : ''};`,
+    );
+    res.status(200).send(stringMatch);
+  } catch (err) {
+    res.status(500).send(err.message);
+  }
+});
+
 // GET donations that fit the string to search
 donationRouter.get('/filter/search', async (req, res) => {
   try {
+    console.log('hahah');
     const { searchTerm, donationsLimit, pageNum } = req.query;
+    console.log(typeof businessId);
     const search = searchTerm.split('+').join(' ');
     const stringMatch = await db.query(
       `
