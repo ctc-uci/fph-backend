@@ -58,6 +58,21 @@ donationRouter.get('/selectByIds', async (req, res) => {
   }
 });
 
+donationRouter.get('/selectByIdsDonation', async (req, res) => {
+  try {
+    const { ids } = req.query;
+    const data = await db.query(
+      `SELECT b.*, d.*
+      FROM public.business AS b
+      INNER JOIN public.donation_tracking AS d ON b.id = d.business_id
+      WHERE d.donation_id IN (${ids});`,
+    );
+    res.status(200).send(data);
+  } catch (err) {
+    res.status(500).send(err.message);
+  }
+});
+
 // GET donation by id
 donationRouter.get('/:donationId', async (req, res) => {
   try {
