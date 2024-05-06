@@ -1,6 +1,4 @@
 .env
-.github/**
-.github/*
 
 yarn.lock
 
