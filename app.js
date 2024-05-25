@@ -21,6 +21,7 @@ app.use(
       process.env.NODE_ENV === 'development'
         ? `${process.env.REACT_APP_HOST}:${process.env.REACT_APP_PORT}`
         : process.env.PROD_CLIENT_HOSTNAME,
+    credentials: true,
   }),
 );
 
