@@ -4,6 +4,9 @@ on:
   push:
     branches: dev
 
+env:
+  CLIENT_HOSTNAME: ${{ secrets.PROD_CLIENT_HOSTNAME  }}
+
 jobs:
   Deploy:
     runs-on: ubuntu-latest
@@ -14,7 +17,6 @@ jobs:
         env:
           PRIVATE_KEY: ${{ secrets.PROD_AWS_EC2_PRIVATE_KEY  }}
           HOSTNAME: ${{ secrets.PROD_AWS_EC2_HOSTNAME  }}
-          CLIENT_HOSTNAME: ${{ secrets.PROD_CLIENT_HOSTNAME  }}
           USER: ${{ secrets.AWS_EC2_USER  }}
 
         run: |
