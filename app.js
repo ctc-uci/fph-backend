@@ -17,10 +17,11 @@ const PORT = process.env.PORT || 3001;
 
 app.use(
   cors({
-    origin:
-      process.env.NODE_ENV === 'development'
-        ? `${process.env.REACT_APP_HOST}:${process.env.REACT_APP_PORT}`
-        : process.env.PROD_CLIENT_HOSTNAME,
+    // origin:
+    //   process.env.NODE_ENV === 'development'
+    //     ? `${process.env.REACT_APP_HOST}:${process.env.REACT_APP_PORT}`
+    //     : process.env.PROD_CLIENT_HOSTNAME,
+    origin: true,
     credentials: true,
   }),
 );
