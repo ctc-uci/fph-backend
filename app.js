@@ -23,7 +23,7 @@ app.use(
       process.env.NODE_ENV === 'development'
         ? `${process.env.REACT_APP_HOST}:${process.env.REACT_APP_PORT}`
         : // : `${CLIENT_HOSTNAME}`,
-          `${'http://fph-frontend-prod.s3-website-us-west-1.amazonaws.com/'}`,
+          `http://fph-frontend-prod.s3-website-us-west-1.amazonaws.com/`,
 
     credentials: true,
   }),
