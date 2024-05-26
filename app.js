@@ -15,15 +15,12 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 const PORT = process.env.PORT || 3001;
 
-// const { CLIENT_HOSTNAME } = import.meta.env;
-
 app.use(
   cors({
     origin:
       process.env.NODE_ENV === 'development'
         ? `${process.env.REACT_APP_HOST}:${process.env.REACT_APP_PORT}`
-        : // : `${CLIENT_HOSTNAME}`,
-          `http://fph-frontend-prod.s3-website-us-west-1.amazonaws.com/`,
+        : 'http://fph-frontend-prod.s3-website-us-west-1.amazonaws.com',
 
     credentials: true,
   }),
