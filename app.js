@@ -18,7 +18,7 @@ const PORT = process.env.PORT || 3001;
 app.use(
   cors({
     origin:
-      process.env.NODE_ENV === 'development'
+      !process.env.NODE_ENV || process.env.NODE_ENV === 'development'
         ? `${process.env.REACT_APP_HOST}:${process.env.REACT_APP_PORT}`
         : `${process.env.CLIENT_HOSTNAME}`,
     credentials: true,

@@ -4,9 +4,6 @@ on:
   push:
     branches: dev
 
-env:
-  CLIENT_HOSTNAME: ${{ secrets.PROD_CLIENT_HOSTNAME  }}
-
 jobs:
   Deploy:
     runs-on: ubuntu-latest
