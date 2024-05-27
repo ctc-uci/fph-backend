@@ -5,7 +5,6 @@ on:
     branches: dev
 
 env:
-  NODE_ENV: ${{ secrets.NODE_ENV }}
   CLIENT_HOSTNAME: ${{ secrets.PROD_CLIENT_HOSTNAME  }}
 
 jobs:
