@@ -1,6 +1,6 @@
-# npo-backend-template
+# Feeding Pets of the Homeless Backend
 
-This template will be used to create all NPO backend repos
+This is the backend for the Feeding Pets of the Homeless project.
 
 ## Setting up development environment
 
@@ -19,8 +19,8 @@ non-standard.
 
 1. `dev`: This is the main branch of the project. All PRs should be merged into this branch, as if
    it was "main".
-1. `main`: This is the "production-ready" branch of the project; `dev` should only be merged into
-   `main` when it is at a presentable state.
+1. `dev-deployment`: This is the "production-ready" branch of the project; `dev` should only be merged into
+   `dev-deployment` when it is at a presentable state.
 
 ## Available Scripts
 
