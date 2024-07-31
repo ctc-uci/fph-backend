@@ -118,7 +118,7 @@ adminUserRouter.put('/:email', async (req, res) => {
       {
         name,
         lastUpdated,
-        newEmail,
+        newEmail: newEmail ?? email,
         email,
       },
     );
