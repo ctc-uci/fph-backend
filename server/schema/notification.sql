@@ -1,11 +1,15 @@
-DROP TABLE IF EXISTS public.fair_market_value;
+DROP TABLE IF EXISTS public.notification;
 
-CREATE TABLE IF NOT EXISTS public.fair_market_value
+CREATE TABLE IF NOT EXISTS public.notification
 (
-    item_id integer NOT NULL DEFAULT nextval('fair_market_value_item_id_seq'::regclass),
-    item_name character varying(200) COLLATE pg_catalog."default" NOT NULL,
-    quantity_type character varying(100) COLLATE pg_catalog."default",
-    price numeric,
-    category character varying(50) COLLATE pg_catalog."default",
-    CONSTRAINT fair_market_value_pkey PRIMARY KEY (item_id)
+    business_id integer NOT NULL DEFAULT nextval('notification_business_id_seq'::regclass),
+    notification_id integer NOT NULL DEFAULT nextval('notification_notification_id_seq'::regclass),
+    message character varying(2000) COLLATE pg_catalog."default" NOT NULL,
+    "timestamp" date NOT NULL,
+    been_dismissed boolean NOT NULL,
+    CONSTRAINT notification_pkey PRIMARY KEY (notification_id),
+    CONSTRAINT business_id FOREIGN KEY (business_id)
+        REFERENCES public.business (id) MATCH SIMPLE
+        ON UPDATE NO ACTION
+        ON DELETE NO ACTION
 )
