@@ -28,21 +28,19 @@ notificationRouter.get('/:id', async (req, res) => {
 });
 
 notificationRouter.post('/', async (req, res) => {
-  const {
-    business_id: businessId,
-    message,
-    timestamp,
-    been_dismissed: beenDismissed,
-    type,
-  } = req.body;
+  console.log(req.body);
+  const timestamp = new Date();
+
+  const { businessId, message, type, senderId, businessName, donationId } = req.body;
+
   try {
     await db.query(
       `
-        INSERT INTO notification (business_id, message, timestamp, been_dismissed, type)
+        INSERT INTO notification (business_id, message, timestamp, type, sender_id, business_name, donation_id)
         VALUES
-        ($(businessId), $(message), $(timestamp), $(beenDismissed), $(type));
+        ($(businessId), $(message), $(timestamp), $(type), $(senderId), $(businessName), $(donationId));
       `,
-      { businessId, message, timestamp, beenDismissed, type },
+      { message, businessId, timestamp, type, senderId, businessName, donationId },
     );
     res.status(200).json({
       status: 'Success',
