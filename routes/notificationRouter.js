@@ -82,13 +82,9 @@ notificationRouter.put('/:id', async (req, res) => {
 notificationRouter.get('/request/:id', async (req, res) => {
   const { id } = req.params;
 
-  const message = `'Business ID: ${id}%'`;
-
-  const idNotification = await db.query(
-    `SELECT * FROM notification WHERE business_id = 0 AND message LIKE ${message} AND type='Supply Request' ORDER BY timestamp DESC;`,
-    {
-      id,
-    },
+  const idNotification = await db.any(
+    `SELECT * FROM notification WHERE business_id = $(id) AND type='Supply Request' ORDER BY timestamp DESC;`,
+    { id },
   );
 
   try {
