@@ -262,7 +262,7 @@ businessRouter.post('/', async (req, res) => {
         inactive,
         finalCheck,
         createdBy,
-        createdDate,
+        createdDate ?? new Date(),
         city,
       ],
     );
