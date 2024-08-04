@@ -266,12 +266,14 @@ donationRouter.get('/totalDonations/:filter', async (req, res) => {
 // GET the amount of donations that fit similar to that of the searchTerm
 donationRouter.get('/filter/searchCount', async (req, res) => {
   try {
-    const { searchTerm } = req.query;
+    const { businessId, searchTerm } = req.query;
     const totalSites = await db.query(`
       SELECT COUNT(*)
       FROM donation_tracking
-      WHERE reporter ILIKE '%${searchTerm}%'
-      OR food_bank_donation ILIKE '%${searchTerm}%'
+      WHERE (
+        reporter ILIKE '%${searchTerm}%'
+        OR food_bank_donation ILIKE '%${searchTerm}%'
+      ) AND business_id = ${businessId}
     `);
     res.status(200).send(totalSites);
   } catch (err) {
@@ -282,18 +284,33 @@ donationRouter.get('/filter/searchCount', async (req, res) => {
 // GET donations that fit the string to search
 donationRouter.get('/filter/search', async (req, res) => {
   try {
-    const { searchTerm, donationsLimit, pageNum } = req.query;
+    const { businessId, searchTerm, donationsLimit, pageNum } = req.query;
     const search = searchTerm.split('+').join(' ');
-    const stringMatch = await db.query(
-      `
+
+    let query = `
       SELECT *
       FROM donation_tracking
-      WHERE reporter ILIKE '%${search}%'
-        OR food_bank_donation ILIKE '%${search}%'
-      ${donationsLimit ? ` LIMIT ${donationsLimit}` : ''}
-      ${pageNum ? ` OFFSET ${(pageNum - 1) * donationsLimit}` : ''};`,
-    );
-    res.status(200).send(stringMatch);
+      WHERE (reporter ILIKE $(search) OR food_bank_donation ILIKE $(search))
+        AND business_id = $(businessId)
+      ORDER BY date DESC`;
+
+    const params = {
+      search: `%${search}%`,
+      businessId,
+    };
+
+    if (donationsLimit) {
+      query += ` LIMIT $(donationsLimit)`;
+      params.donationsLimit = parseInt(donationsLimit, 10);
+    }
+
+    if (pageNum) {
+      query += ` OFFSET $(offset)`;
+      params.offset = (parseInt(pageNum, 10) - 1) * parseInt(donationsLimit, 10);
+    }
+
+    const result = await db.any(query, params);
+    res.status(200).json(result);
   } catch (err) {
     res.status(500).send(err.message);
   }
