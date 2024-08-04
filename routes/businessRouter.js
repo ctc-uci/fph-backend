@@ -77,6 +77,61 @@ businessRouter.get('/order/:column/:sortType', async (req, res) => {
   }
 });
 
+// GET businesses that fit the string to search
+businessRouter.get('/filter/search', async (req, res) => {
+  try {
+    // eslint-disable-next-line no-unused-vars
+    const { currentTab, pageLimit, searchTerm, pageNum } = req.query;
+    const search = searchTerm.split('+').join(' ');
+
+    let query = `
+      SELECT *
+      FROM business
+      WHERE (name ILIKE $(search) OR primary_email ILIKE $(search))`;
+
+    const params = {
+      search: `%${search}%`,
+    };
+
+    if (pageLimit) {
+      query += ` LIMIT $(pageLimit)`;
+      params.pageLimit = parseInt(pageLimit, 10);
+    }
+
+    if (pageNum) {
+      query += ` OFFSET $(offset)`;
+      params.offset = (parseInt(pageNum, 10) - 1) * parseInt(pageLimit, 10);
+    }
+
+    const result = await db.any(query, params);
+    res.status(200).json(result);
+  } catch (err) {
+    res.status(500).send(err.message);
+  }
+});
+
+// GET the amount of businesses that fit the string to search
+businessRouter.get('/filter/searchCount', async (req, res) => {
+  try {
+    const { searchTerm } = req.query;
+    const search = searchTerm.split('+').join(' ');
+
+    const query = `
+      SELECT COUNT(*)
+      FROM business
+      WHERE (name ILIKE $(search) OR primary_email ILIKE $(search))`;
+
+    const params = {
+      search: `%${search}%`,
+    };
+
+    const result = await db.any(query, params);
+    res.status(200).send(result);
+  } catch (err) {
+    res.status(500).send(err.message);
+  }
+});
+
 //  POST add a new business
 businessRouter.post('/', async (req, res) => {
   try {
