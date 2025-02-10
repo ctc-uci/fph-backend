@@ -9,7 +9,7 @@ const db = pgp({
   port: process.env.AWS_PORT,
   database: process.env.AWS_DB_NAME,
   ssl: {
-    rejectUnauthorized: true,
+    rejectUnauthorized: false,
   },
 });
 
